@@ -16,35 +16,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.address.exceptions;
+package net.neto_framework.server.exceptions;
 
 /**
- * An exception thrown when failing to create a SocketAddress.
+ * An exception thrown when failing to start/stop a server.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class SocketAddressException extends Exception {
-    private static final long serialVersionUID = -3147497186902377305L;
+public class ServerException extends Exception {
+    private static final long serialVersionUID = -1234551643243035737L;
 
     /**
-     * New SocketAddressException.
-     * 
-     * @param message
-     *            Reason for exception.
-     */
-    public SocketAddressException(String message) {
-        super(message);
-    }
-
-    /**
-     * New SocketAddressException with cause exception.
+     * New ServerException with cause exception.
      * 
      * @param message
      *            Reason for exception.
      * @param exception
      *            Cause exception.
      */
-    public SocketAddressException(String message, Exception exception) {
+    public ServerException(String message, Exception exception) {
         super(message, exception);
     }
 }

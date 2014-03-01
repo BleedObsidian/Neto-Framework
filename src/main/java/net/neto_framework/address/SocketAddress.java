@@ -39,7 +39,7 @@ public class SocketAddress {
      * @param port
      *            Port number. (Max: 65535)
      * @throws SocketAddressException
-     *             Failed to retrieve localhost.
+     *             If fails to create SocketAddress.
      */
     public SocketAddress(int port) throws SocketAddressException {
         try {
@@ -64,6 +64,7 @@ public class SocketAddress {
      * @param port
      *            Port number. (Max: 65535)
      * @throws SocketAddressException
+     *             If fails to get the address of given host.
      */
     public SocketAddress(String host, int port) throws SocketAddressException {
         try {
@@ -89,6 +90,7 @@ public class SocketAddress {
      * @param port
      *            Port number. (Max: 65535)
      * @throws SocketAddressException
+     *             If fails to get the address of given host.
      */
     public SocketAddress(byte[] address, int port)
             throws SocketAddressException {
@@ -107,14 +109,14 @@ public class SocketAddress {
     }
 
     /**
-     * @return - InetAddress of SocketAddress.
+     * @return InetAddress of SocketAddress.
      */
     public InetAddress getInetAddress() {
         return this.address;
     }
 
     /**
-     * @return - Port number of SocketAddress.
+     * @return Port number of SocketAddress.
      */
     public int getPort() {
         return this.port;

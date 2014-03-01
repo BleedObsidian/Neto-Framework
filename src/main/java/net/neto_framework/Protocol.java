@@ -16,35 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.address.exceptions;
+package net.neto_framework;
 
 /**
- * An exception thrown when failing to create a SocketAddress.
+ * An enum of all available protocols that Neto-Framework supports.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class SocketAddressException extends Exception {
-    private static final long serialVersionUID = -3147497186902377305L;
-
-    /**
-     * New SocketAddressException.
-     * 
-     * @param message
-     *            Reason for exception.
-     */
-    public SocketAddressException(String message) {
-        super(message);
-    }
-
-    /**
-     * New SocketAddressException with cause exception.
-     * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
-     */
-    public SocketAddressException(String message, Exception exception) {
-        super(message, exception);
-    }
+public enum Protocol {
+    UDP, TCP
 }
