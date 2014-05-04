@@ -34,8 +34,18 @@ import net.neto_framework.server.exceptions.ServerException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class Server {
+    /**
+     * The default backlog value for TCP servers.
+     */
     public static final int DEFAULT_BACKLOG = 50;
+
+    /**
+     * Default protocol used when a protocol is not given.
+     */
     public static final Protocol DEFAULT_PROTOCOL = Protocol.TCP;
+
+    private final ConnectionHandler connectionHandler;
+    private final ConnectionManager connectionManager;
 
     private final SocketAddress address;
     private final Protocol protocol;
@@ -57,6 +67,9 @@ public class Server {
      *            Maximum amount of connections to queue for tcp.
      */
     public Server(SocketAddress address, Protocol protocol, int backlog) {
+        this.connectionHandler = new ConnectionHandler(this);
+        this.connectionManager = new ConnectionManager();
+
         this.address = address;
         this.protocol = protocol;
         this.backlog = backlog;
@@ -71,6 +84,9 @@ public class Server {
      *            Protocol for server to use.
      */
     public Server(SocketAddress address, Protocol protocol) {
+        this.connectionHandler = new ConnectionHandler(this);
+        this.connectionManager = new ConnectionManager();
+
         this.address = address;
         this.protocol = protocol;
         this.backlog = Server.DEFAULT_BACKLOG;
@@ -83,6 +99,9 @@ public class Server {
      *            SocketAddress for server to bind to.
      */
     public Server(SocketAddress address) {
+        this.connectionHandler = new ConnectionHandler(this);
+        this.connectionManager = new ConnectionManager();
+
         this.address = address;
         this.protocol = Server.DEFAULT_PROTOCOL;
         this.backlog = Server.DEFAULT_BACKLOG;
@@ -92,6 +111,9 @@ public class Server {
      * New server that is not bound to anything.
      */
     public Server() {
+        this.connectionHandler = new ConnectionHandler(this);
+        this.connectionManager = new ConnectionManager();
+
         this.address = null;
         this.protocol = Server.DEFAULT_PROTOCOL;
         this.backlog = Server.DEFAULT_BACKLOG;
@@ -110,6 +132,8 @@ public class Server {
                     this.tcpSocket = new ServerSocket(this.address.getPort(),
                             this.backlog, this.address.getInetAddress());
 
+                    (new Thread(this.connectionHandler)).start();
+
                     this.isRunning = true;
                 } catch (IOException e) {
                     throw new ServerException(
@@ -119,6 +143,8 @@ public class Server {
                 try {
                     this.udpSocket = new DatagramSocket(this.address.getPort(),
                             this.address.getInetAddress());
+
+                    (new Thread(this.connectionHandler)).start();
 
                     this.isRunning = true;
                 } catch (SocketException e) {
@@ -164,7 +190,7 @@ public class Server {
     /**
      * @return Protocol the server is using.
      */
-    public Protocol getProtocol() {
+    public synchronized Protocol getProtocol() {
         return protocol;
     }
 
@@ -179,7 +205,7 @@ public class Server {
      * @return TCP Server Socket. (Null if not using TCP as protocol or if the
      *         server has not been started.)
      */
-    public ServerSocket getTcpSocket() {
+    public synchronized ServerSocket getTcpSocket() {
         return tcpSocket;
     }
 
@@ -187,7 +213,7 @@ public class Server {
      * @return UDP Socket. (Null if not using UDP as protocol or if the server
      *         has not been started.)
      */
-    public DatagramSocket getUdpSocket() {
+    public synchronized DatagramSocket getUdpSocket() {
         return udpSocket;
     }
 
@@ -196,5 +222,12 @@ public class Server {
      */
     public synchronized boolean isRunning() {
         return isRunning;
+    }
+
+    /**
+     * @return ConnectionManager of this server.
+     */
+    public synchronized ConnectionManager getConnectionManager() {
+        return this.connectionManager;
     }
 }
