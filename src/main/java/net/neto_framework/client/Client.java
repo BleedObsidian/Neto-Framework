@@ -24,6 +24,8 @@ import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
+import net.neto_framework.Connection;
+import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.client.exceptions.ClientException;
@@ -40,23 +42,31 @@ public class Client {
      */
     public final static String MAGIC_STRING = "1293";
 
+    private final PacketManager packetManager;
+
     private final SocketAddress address;
     private final Protocol protocol;
 
     private Socket tcpSocket;
     private DatagramSocket udpSocket;
 
+    private ServerConnection connection;
+
     private boolean isConnected;
 
     /**
      * New client that connects to a given server address and protocol.
      * 
+     * @param packetManager
+     *            PacketManager.
      * @param address
      *            Server SocketAddress.
      * @param protocol
      *            Protocol.
      */
-    public Client(SocketAddress address, Protocol protocol) {
+    public Client(PacketManager packetManager, SocketAddress address,
+            Protocol protocol) {
+        this.packetManager = packetManager;
         this.address = address;
         this.protocol = protocol;
     }
@@ -89,7 +99,10 @@ public class Client {
                     String sentMagicString = new String(magicStringBuffer);
 
                     if (sentMagicString.equals(Client.MAGIC_STRING)) {
-                        System.out.println("Connected to server (TCP)!");
+                        this.connection = new ServerConnection(this,
+                                new Connection(this.tcpSocket));
+                        this.isConnected = true;
+                        (new Thread(this.connection)).start();
                     } else {
                         throw new ClientException(
                                 "Received invalid handshake from server",
@@ -122,7 +135,12 @@ public class Client {
                     String sentMagicString = new String(idPacket.getData());
 
                     if (sentMagicString.equals(Client.MAGIC_STRING)) {
-                        System.out.println("Connected to server (UDP)!");
+                        this.connection = new ServerConnection(this,
+                                new Connection(this.udpSocket,
+                                        this.udpSocket.getInetAddress(),
+                                        this.udpSocket.getPort()));
+                        this.isConnected = true;
+                        (new Thread(this.connection)).start();
                     } else {
                         throw new ClientException(
                                 "Received invalid handshake from server",
@@ -132,8 +150,6 @@ public class Client {
                     throw new ClientException(
                             "Failed to send/receive handshake packet", e);
                 }
-
-                this.isConnected = true;
             }
         }
     }
@@ -159,6 +175,13 @@ public class Client {
                 this.isConnected = false;
             }
         }
+    }
+
+    /**
+     * @return PacketManager.
+     */
+    public synchronized PacketManager getPacketManager() {
+        return this.packetManager;
     }
 
     /**
@@ -189,6 +212,13 @@ public class Client {
      */
     public synchronized DatagramSocket getUdpSocket() {
         return this.udpSocket;
+    }
+
+    /**
+     * @return Server Connection.
+     */
+    public synchronized ServerConnection getServerConnection() {
+        return this.connection;
     }
 
     /**

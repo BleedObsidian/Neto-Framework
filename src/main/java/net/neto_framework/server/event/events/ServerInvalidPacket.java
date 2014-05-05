@@ -18,37 +18,49 @@
 
 package net.neto_framework.server.event.events;
 
-import net.neto_framework.server.ClientConnection;
+import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.Server;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEvents;
 
 /**
- * An event that is fired when a new client successfully connects.
+ * An event that is fired when the server receives an invalid packet id or
+ * packet.
  * 
- * @author BleedObsidian (Jesse Precott)
+ * @author BleedObsidian (Jesse Prescott)
  */
-public class ServerClientConnect extends ServerEvent {
-    private final ClientConnection connection;
+public class ServerInvalidPacket extends ServerEvent {
+    private final int id;
+    private final PacketException exception;
 
     /**
-     * New ServerClientConnect event.
+     * New ServerInvalidPacket Event.
      * 
      * @param server
      *            Server.
-     * @param connection
-     *            New Connection.
+     * @param id
+     *            Received packet ID.
+     * @param exception
+     *            PacketException.
      */
-    public ServerClientConnect(Server server, ClientConnection connection) {
-        super(server, ServerEvents.SERVER_CLIENT_CONNECT);
+    public ServerInvalidPacket(Server server, int id, PacketException exception) {
+        super(server, ServerEvents.SERVER_INVALID_PACKET);
 
-        this.connection = connection;
+        this.id = id;
+        this.exception = exception;
     }
 
     /**
-     * @return Newly connected Connection.
+     * @return Received ID of packet.
      */
-    public ClientConnection getClientConnection() {
-        return this.connection;
+    public int getReceivedID() {
+        return this.id;
+    }
+
+    /**
+     * @return PacketException.
+     */
+    public PacketException getPacketException() {
+        return this.exception;
     }
 }

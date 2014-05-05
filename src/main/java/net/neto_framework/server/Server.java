@@ -23,6 +23,7 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
 
+import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
@@ -47,6 +48,8 @@ public class Server {
      */
     public static final Protocol DEFAULT_PROTOCOL = Protocol.TCP;
 
+    private final PacketManager packetManager;
+
     private final ConnectionHandler connectionHandler;
     private final ConnectionManager connectionManager;
 
@@ -64,6 +67,8 @@ public class Server {
     /**
      * New server that binds to given address and uses a given protocol.
      * 
+     * @param packetManager
+     *            PacketManager.
      * @param address
      *            SocketAddress for server to bind to.
      * @param protocol
@@ -71,7 +76,9 @@ public class Server {
      * @param backlog
      *            Maximum amount of connections to queue for tcp.
      */
-    public Server(SocketAddress address, Protocol protocol, int backlog) {
+    public Server(PacketManager packetManager, SocketAddress address,
+            Protocol protocol, int backlog) {
+        this.packetManager = new PacketManager();
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
@@ -85,12 +92,16 @@ public class Server {
     /**
      * New server that binds to given address and uses a given protocol.
      * 
+     * @param packetManager
+     *            PacketManager.
      * @param address
      *            SocketAddress for server to bind to.
      * @param protocol
      *            Protocol for server to use.
      */
-    public Server(SocketAddress address, Protocol protocol) {
+    public Server(PacketManager packetManager, SocketAddress address,
+            Protocol protocol) {
+        this.packetManager = packetManager;
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
@@ -104,10 +115,13 @@ public class Server {
     /**
      * New server that binds to given address and uses TCP.
      * 
+     * @param packetManager
+     *            PacketManager.
      * @param address
      *            SocketAddress for server to bind to.
      */
-    public Server(SocketAddress address) {
+    public Server(PacketManager packetManager, SocketAddress address) {
+        this.packetManager = packetManager;
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
@@ -120,8 +134,12 @@ public class Server {
 
     /**
      * New server that is not bound to anything.
+     * 
+     * @param packetManager
+     *            PacketManager.
      */
-    public Server() {
+    public Server(PacketManager packetManager) {
+        this.packetManager = packetManager;
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
@@ -195,6 +213,13 @@ public class Server {
 
             this.eventHandler.callEvent(new ServerStop(this));
         }
+    }
+
+    /**
+     * @return PacketManager.
+     */
+    public synchronized PacketManager getPacketManager() {
+        return this.packetManager;
     }
 
     /**

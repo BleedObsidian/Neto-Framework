@@ -16,13 +16,35 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.server.event;
+package net.neto_framework.exceptions;
 
 /**
- * An enum that contains all registered server events.
+ * An exception thrown when relating to packets.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public enum ServerEvents {
-    SERVER_FAILED_TO_ACCEPT_CONNECTION, SERVER_RECEIVE_INVALID_HANDSHAKE, SERVER_CLIENT_CONNECT, SERVER_START, SERVER_STOP, SERVER_INVALID_PACKET, SERVER_PACKET_EXCEPTION;
+public class PacketException extends Exception {
+    private static final long serialVersionUID = 2157534617064673101L;
+
+    /**
+     * New PacketException with cause exception.
+     * 
+     * @param message
+     *            Reason for exception.
+     * @param exception
+     *            Cause exception.
+     */
+    public PacketException(String message, Exception exception) {
+        super(message, exception);
+    }
+
+    /**
+     * New PacketException with cause exception.
+     * 
+     * @param message
+     *            Reason for exception.
+     */
+    public PacketException(String message) {
+        super(message);
+    }
 }

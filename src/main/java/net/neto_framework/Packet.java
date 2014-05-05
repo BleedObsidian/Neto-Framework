@@ -16,13 +16,42 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.server.event;
+package net.neto_framework;
+
+import java.io.IOException;
 
 /**
- * An enum that contains all registered server events.
+ * A packet interface that can be sent and received to and from connections.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public enum ServerEvents {
-    SERVER_FAILED_TO_ACCEPT_CONNECTION, SERVER_RECEIVE_INVALID_HANDSHAKE, SERVER_CLIENT_CONNECT, SERVER_START, SERVER_STOP, SERVER_INVALID_PACKET, SERVER_PACKET_EXCEPTION;
+public interface Packet {
+    /**
+     * Send packet to connection.
+     * 
+     * @param connection
+     *            Connection.
+     */
+    public void send(Connection connection) throws IOException;
+
+    /**
+     * Receive packet from connection.
+     * 
+     * @param connection
+     *            Connection.
+     */
+    public void receive(Connection connection) throws IOException;
+
+    /**
+     * Fired when this packet is received.
+     * 
+     * @param packet
+     *            - Packet.
+     */
+    public void onReceive(Packet packet);
+
+    /**
+     * @return Unique packet ID.
+     */
+    public int getID();
 }

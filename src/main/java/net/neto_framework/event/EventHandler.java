@@ -26,6 +26,8 @@ import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerInvalidPacket;
+import net.neto_framework.server.event.events.ServerPacketException;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.event.events.ServerStart;
 import net.neto_framework.server.event.events.ServerStop;
@@ -110,6 +112,16 @@ public class EventHandler {
         case SERVER_STOP:
             for (ServerEventListener listener : this.serverEventListeners) {
                 listener.onServerStop((ServerStop) event);
+            }
+            break;
+        case SERVER_INVALID_PACKET:
+            for (ServerEventListener listener : this.serverEventListeners) {
+                listener.onServerInvalidPacket((ServerInvalidPacket) event);
+            }
+            break;
+        case SERVER_PACKET_EXCEPTION:
+            for (ServerEventListener listener : this.serverEventListeners) {
+                listener.onServerPacketException((ServerPacketException) event);
             }
             break;
         }

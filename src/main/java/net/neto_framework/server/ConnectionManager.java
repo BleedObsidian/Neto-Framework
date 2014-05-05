@@ -22,6 +22,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 
+import net.neto_framework.Connection;
+
 /**
  * A manager to take care of all connections via tcp/udp.
  * 
@@ -30,7 +32,7 @@ import java.util.HashMap;
 public class ConnectionManager {
     private int idPool = 0;
 
-    private volatile HashMap<Integer, Connection> connections = new HashMap<Integer, Connection>();
+    private volatile HashMap<Integer, ClientConnection> connections = new HashMap<Integer, ClientConnection>();
 
     /**
      * Add given TCP connection into pool.
@@ -43,7 +45,8 @@ public class ConnectionManager {
      */
     public int addConnection(Server server, Socket socket) {
         int id = this.idPool++;
-        Connection connection = new Connection(server, id, socket);
+        ClientConnection connection = new ClientConnection(server, id,
+                new Connection(socket));
         this.connections.put(id, connection);
         (new Thread(connection)).start();
 
@@ -63,7 +66,8 @@ public class ConnectionManager {
      */
     public int addConnection(Server server, InetAddress address, int port) {
         int id = this.idPool++;
-        Connection connection = new Connection(server, id, address, port);
+        ClientConnection connection = new ClientConnection(server, id,
+                new Connection(server.getUdpSocket(), address, port));
         this.connections.put(id, connection);
         (new Thread(connection)).start();
 
@@ -98,7 +102,7 @@ public class ConnectionManager {
      *            Connection ID.
      * @return Connection.
      */
-    public Connection getConnection(int id) {
+    public ClientConnection getConnection(int id) {
         return this.connections.get(id);
     }
 }

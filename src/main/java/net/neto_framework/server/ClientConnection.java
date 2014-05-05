@@ -20,86 +20,57 @@ package net.neto_framework.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.Socket;
 
+import net.neto_framework.Connection;
+import net.neto_framework.Packet;
 import net.neto_framework.Protocol;
+import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerInvalidPacket;
+import net.neto_framework.server.event.events.ServerPacketException;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
- * A connection thread to handle all connections individually.
+ * A connection thread to handle all client connections individually.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class Connection implements Runnable {
-    private final Server server;
-
+public class ClientConnection implements Runnable {
     private final int id;
-    private final Protocol protocol;
 
-    private final Socket socket;
-    private final InetAddress address;
-    private final int port;
+    private final Server server;
+    private final Connection connection;
 
     /**
-     * New TCP Connection.
+     * New ClientConnection.
      * 
      * @param server
      *            Server.
      * @param id
-     *            Connection ID.
-     * @param socket
-     *            TCP Socket.
+     *            Client ID.
+     * @param connection
+     *            Connection.
      */
-    public Connection(Server server, int id, Socket socket) {
+    public ClientConnection(Server server, int id, Connection connection) {
         this.server = server;
-
         this.id = id;
-        this.protocol = Protocol.TCP;
-
-        this.socket = socket;
-        this.address = null;
-        this.port = 0;
-    }
-
-    /**
-     * New UDP Connection.
-     * 
-     * @param server
-     *            Server.
-     * @param id
-     *            Connection ID.
-     * @param address
-     *            UDP InetAddress.
-     * @param port
-     *            Port number.
-     */
-    public Connection(Server server, int id, InetAddress address, int port) {
-        this.server = server;
-
-        this.id = id;
-        this.protocol = Protocol.UDP;
-
-        this.socket = null;
-        this.address = address;
-        this.port = port;
+        this.connection = connection;
     }
 
     public void run() {
         byte[] magicStringBuffer = ConnectionHandler.MAGIC_STRING.getBytes();
 
-        if (this.protocol == Protocol.TCP) {
+        if (this.server.getProtocol() == Protocol.TCP) {
             try {
                 byte[] buffer = new byte[ConnectionHandler.MAGIC_STRING
                         .getBytes().length];
-                this.socket.getInputStream().read(buffer);
+                this.connection.getTCPSocket().getInputStream().read(buffer);
 
                 if (!new String(buffer).equals(ConnectionHandler.MAGIC_STRING)) {
                     ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
-                            this.server, this.address, buffer);
+                            this.server, this.connection.getAddress(), buffer);
                     this.server.getEventHandler().callEvent(event);
                     return;
                 }
@@ -114,7 +85,8 @@ public class Connection implements Runnable {
             }
 
             try {
-                this.socket.getOutputStream().write(magicStringBuffer);
+                this.connection.getTCPSocket().getOutputStream()
+                        .write(magicStringBuffer);
             } catch (IOException e) {
                 ConnectionException exception = new ConnectionException(
                         "I/O Error when trying to send a TCP handshake packet.",
@@ -124,9 +96,10 @@ public class Connection implements Runnable {
                 this.server.getEventHandler().callEvent(event);
                 return;
             }
-        } else if (this.protocol == Protocol.UDP) {
+        } else if (this.server.getProtocol() == Protocol.UDP) {
             DatagramPacket idPacket = new DatagramPacket(magicStringBuffer,
-                    magicStringBuffer.length, this.address, this.port);
+                    magicStringBuffer.length, this.connection.getAddress(),
+                    this.connection.getPort());
             try {
                 this.server.getUdpSocket().send(idPacket);
             } catch (IOException e) {
@@ -144,46 +117,66 @@ public class Connection implements Runnable {
                 new ServerClientConnect(this.server, this));
 
         while (this.server.isRunning()) {
-            if (this.protocol == Protocol.TCP) {
+            try {
+                int packetID = this.connection.receiveInteger();
 
-            } else if (this.protocol == Protocol.UDP) {
-
+                if (this.server.getPacketManager().hasPacket(packetID)) {
+                    try {
+                        this.server.getPacketManager().receive(packetID,
+                                this.connection);
+                    } catch (InstantiationException e) {
+                        PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.server.getEventHandler().callEvent(
+                                new ServerPacketException(this.server,
+                                        exception));
+                    } catch (IllegalAccessException e) {
+                        PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.server.getEventHandler().callEvent(
+                                new ServerPacketException(this.server,
+                                        exception));
+                    }
+                } else {
+                    PacketException exception = new PacketException(
+                            "Invalid packet received.");
+                    this.server.getEventHandler().callEvent(
+                            new ServerInvalidPacket(this.server, packetID,
+                                    exception));
+                }
+            } catch (IOException e) {
+                PacketException exception = new PacketException(
+                        "Failed to receive packet ID.", e);
+                this.server.getEventHandler().callEvent(
+                        new ServerPacketException(this.server, exception));
             }
         }
     }
 
     /**
-     * @return Connection ID.
+     * Send client packet.
+     * 
+     * @param packet
+     *            - Packet.
+     * @throws IOException
+     *             If fails to send packet.
      */
-    public synchronized int getID() {
+    public void sendPacket(Packet packet) throws IOException {
+        this.connection.sendInteger(packet.getID());
+        packet.send(this.connection);
+    }
+
+    /**
+     * @return Client ID.
+     */
+    public synchronized int getClientID() {
         return this.id;
     }
 
     /**
-     * @return Protocol.
+     * @return Connection.
      */
-    public synchronized Protocol getProtocol() {
-        return this.protocol;
-    }
-
-    /**
-     * @return Socket. (Null if protocol is UDP)
-     */
-    public synchronized Socket getSocket() {
-        return this.socket;
-    }
-
-    /**
-     * @return InetAddress. (Null if protocol is TCP)
-     */
-    public synchronized InetAddress getAddress() {
-        return this.address;
-    }
-
-    /**
-     * @return Port. (Null if protocol is TCP)
-     */
-    public synchronized int getPort() {
-        return this.port;
+    public synchronized Connection getConnection() {
+        return this.connection;
     }
 }

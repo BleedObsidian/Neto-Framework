@@ -20,6 +20,8 @@ package net.neto_framework.server.event;
 
 import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerInvalidPacket;
+import net.neto_framework.server.event.events.ServerPacketException;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.event.events.ServerStart;
 import net.neto_framework.server.event.events.ServerStop;
@@ -80,6 +82,26 @@ public abstract class ServerEventListener {
      *            ServerStop event.
      */
     public void onServerStop(ServerStop event) {
+
+    }
+
+    /**
+     * Fired when the server receives an invalid packet id or packet.
+     * 
+     * @param event
+     *            ServerInvalidPacket event.
+     */
+    public void onServerInvalidPacket(ServerInvalidPacket event) {
+
+    }
+
+    /**
+     * Fired when the server has a problem receiving or sending a packet.
+     * 
+     * @param event
+     *            ServerPacketException.
+     */
+    public void onServerPacketException(ServerPacketException event) {
 
     }
 }
