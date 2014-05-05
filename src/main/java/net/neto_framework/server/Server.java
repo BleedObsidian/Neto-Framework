@@ -184,21 +184,21 @@ public class Server {
      * @return Address that server is binding to.
      */
     public SocketAddress getAddress() {
-        return address;
+        return this.address;
     }
 
     /**
      * @return Protocol the server is using.
      */
     public synchronized Protocol getProtocol() {
-        return protocol;
+        return this.protocol;
     }
 
     /**
      * @return TCP Backlog.
      */
     public int getBacklog() {
-        return backlog;
+        return this.backlog;
     }
 
     /**
@@ -206,7 +206,7 @@ public class Server {
      *         server has not been started.)
      */
     public synchronized ServerSocket getTcpSocket() {
-        return tcpSocket;
+        return this.tcpSocket;
     }
 
     /**
@@ -214,14 +214,14 @@ public class Server {
      *         has not been started.)
      */
     public synchronized DatagramSocket getUdpSocket() {
-        return udpSocket;
+        return this.udpSocket;
     }
 
     /**
      * @return If server is currently running.
      */
     public synchronized boolean isRunning() {
-        return isRunning;
+        return this.isRunning;
     }
 
     /**

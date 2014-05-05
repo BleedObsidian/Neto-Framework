@@ -73,8 +73,14 @@ public class ConnectionHandler extends Thread {
 
                     if (new String(packet.getData())
                             .equals(ConnectionHandler.MAGIC_STRING)) {
-                        this.server.getConnectionManager().addUdpConnection(
-                                packet.getAddress());
+                        String id = String.valueOf(this.server
+                                .getConnectionManager().addUdpConnection(
+                                        packet.getAddress()));
+                        byte[] idBuffer = id.getBytes();
+                        DatagramPacket idPacket = new DatagramPacket(idBuffer,
+                                idBuffer.length, packet.getAddress(),
+                                packet.getPort());
+                        this.server.getUdpSocket().send(idPacket);
                     } else {
                         /*
                          * (TODO: Pass to an event) UDP packet received but

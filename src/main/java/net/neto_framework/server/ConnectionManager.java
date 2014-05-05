@@ -42,6 +42,7 @@ public class ConnectionManager {
      */
     public int addTcpConnection(Socket socket) {
         this.tcpConnections.put(this.idPool++, socket);
+        System.out.println("TCP Connection Added");
         return this.idPool;
     }
 
@@ -54,6 +55,7 @@ public class ConnectionManager {
      */
     public int addUdpConnection(InetAddress address) {
         this.udpConnections.put(this.idPool++, address);
+        System.out.println("UDP Connection Added");
         return this.idPool;
     }
 
