@@ -26,6 +26,8 @@ import java.net.SocketException;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
+import net.neto_framework.server.event.events.ServerStart;
+import net.neto_framework.server.event.events.ServerStop;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -163,6 +165,8 @@ public class Server {
                             "Failed to start server on given address.", e);
                 }
             }
+
+            this.eventHandler.callEvent(new ServerStart(this));
         }
     }
 
@@ -188,6 +192,8 @@ public class Server {
 
                 this.isRunning = false;
             }
+
+            this.eventHandler.callEvent(new ServerStop(this));
         }
     }
 

@@ -18,8 +18,11 @@
 
 package net.neto_framework.server.event;
 
+import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
+import net.neto_framework.server.event.events.ServerStart;
+import net.neto_framework.server.event.events.ServerStop;
 
 /**
  * An abstract class that allows actions to be taken when specified events are
@@ -29,7 +32,7 @@ import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
  */
 public abstract class ServerEventListener {
     /**
-     * Fired when the server failes to accept a TCP or UDP connection.
+     * Fired when the server fails to accept a TCP or UDP connection.
      * 
      * @param event
      *            ServerFaildToAcceptConnection event.
@@ -47,6 +50,36 @@ public abstract class ServerEventListener {
      */
     public void onServerReceiveInvalidHandshake(
             ServerReceiveInvalidHandshake event) {
+
+    }
+
+    /**
+     * Fired when a new client successfully connects to the server.
+     * 
+     * @param event
+     *            ServerClientConnect.
+     */
+    public void onServerClientConnect(ServerClientConnect event) {
+
+    }
+
+    /**
+     * Fired when the server starts.
+     * 
+     * @param event
+     *            ServerStart event.
+     */
+    public void onServerStart(ServerStart event) {
+
+    }
+
+    /**
+     * Fired when the server stops.
+     * 
+     * @param event
+     *            ServerStop event.
+     */
+    public void onServerStop(ServerStop event) {
 
     }
 }

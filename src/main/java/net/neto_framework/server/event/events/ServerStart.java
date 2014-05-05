@@ -16,13 +16,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.server.event;
+package net.neto_framework.server.event.events;
+
+import net.neto_framework.server.Server;
+import net.neto_framework.server.event.ServerEvent;
+import net.neto_framework.server.event.ServerEvents;
 
 /**
- * An enum that contains all registered server events.
+ * An event that is fired when the server starts.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public enum ServerEvents {
-    SERVER_FAILED_TO_ACCEPT_CONNECTION, SERVER_RECEIVE_INVALID_HANDSHAKE, SERVER_CLIENT_CONNECT, SERVER_START, SERVER_STOP;
+public class ServerStart extends ServerEvent {
+    /**
+     * New ServerStart event.
+     * 
+     * @param server
+     *            Server.
+     */
+    public ServerStart(Server server) {
+        super(server, ServerEvents.SERVER_START);
+    }
 }

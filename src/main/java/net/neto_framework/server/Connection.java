@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import net.neto_framework.Protocol;
+import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.exceptions.ConnectionException;
@@ -138,6 +139,9 @@ public class Connection implements Runnable {
                 return;
             }
         }
+
+        this.server.getEventHandler().callEvent(
+                new ServerClientConnect(this.server, this));
 
         while (this.server.isRunning()) {
             if (this.protocol == Protocol.TCP) {

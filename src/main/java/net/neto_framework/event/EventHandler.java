@@ -24,8 +24,11 @@ import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
+import net.neto_framework.server.event.events.ServerClientConnect;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
 import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
+import net.neto_framework.server.event.events.ServerStart;
+import net.neto_framework.server.event.events.ServerStop;
 
 /**
  * Used to call and manage events for servers and clients.
@@ -92,6 +95,21 @@ public class EventHandler {
         case SERVER_RECEIVE_INVALID_HANDSHAKE:
             for (ServerEventListener listener : this.serverEventListeners) {
                 listener.onServerReceiveInvalidHandshake((ServerReceiveInvalidHandshake) event);
+            }
+            break;
+        case SERVER_CLIENT_CONNECT:
+            for (ServerEventListener listener : this.serverEventListeners) {
+                listener.onServerClientConnect((ServerClientConnect) event);
+            }
+            break;
+        case SERVER_START:
+            for (ServerEventListener listener : this.serverEventListeners) {
+                listener.onServerStart((ServerStart) event);
+            }
+            break;
+        case SERVER_STOP:
+            for (ServerEventListener listener : this.serverEventListeners) {
+                listener.onServerStop((ServerStop) event);
             }
             break;
         }
