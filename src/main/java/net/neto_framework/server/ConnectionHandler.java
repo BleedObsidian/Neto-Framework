@@ -23,6 +23,9 @@ import java.net.DatagramPacket;
 import java.net.Socket;
 
 import net.neto_framework.Protocol;
+import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
+import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
  * A connection handler that accepts TCP/UDP connections on a separate thread.
@@ -56,11 +59,12 @@ public class ConnectionHandler extends Thread {
                     Socket socket = this.server.getTcpSocket().accept();
                     this.server.getConnectionManager().addTcpConnection(socket);
                 } catch (IOException e) {
-                    /*
-                     * (TODO: Pass to an event) throw new ConnectionException(
-                     * "I/O Error when trying to accept a TCP socket connection."
-                     * , e);
-                     */
+                    ConnectionException exception = new ConnectionException(
+                            "I/O Error when trying to accept a TCP socket connection.",
+                            e);
+                    ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
+                            this.server, this.server.getProtocol(), exception);
+                    this.server.getEventHandler().callEvent(event);
                 }
             } else if (this.server.getProtocol() == Protocol.UDP) {
                 byte[] buffer = new byte[ConnectionHandler.MAGIC_STRING
@@ -82,17 +86,18 @@ public class ConnectionHandler extends Thread {
                                 packet.getPort());
                         this.server.getUdpSocket().send(idPacket);
                     } else {
-                        /*
-                         * (TODO: Pass to an event) UDP packet received but
-                         * contains invalid Magic Number.
-                         */
+                        ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
+                                this.server, packet.getAddress(),
+                                packet.getData());
+                        this.server.getEventHandler().callEvent(event);
                     }
                 } catch (IOException e) {
-                    /*
-                     * (TODO: Pass to an event) throw new ConnectionException(
-                     * "I/O Error when trying to accept a UDP handshake packet."
-                     * , e);
-                     */
+                    ConnectionException exception = new ConnectionException(
+                            "I/O Error when trying to accept a UDP handshake packet.",
+                            e);
+                    ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
+                            this.server, this.server.getProtocol(), exception);
+                    this.server.getEventHandler().callEvent(event);
                 }
             }
         }

@@ -25,6 +25,7 @@ import java.net.SocketException;
 
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
+import net.neto_framework.event.EventHandler;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -46,6 +47,8 @@ public class Server {
 
     private final ConnectionHandler connectionHandler;
     private final ConnectionManager connectionManager;
+
+    private final EventHandler eventHandler;
 
     private final SocketAddress address;
     private final Protocol protocol;
@@ -70,6 +73,8 @@ public class Server {
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
+        this.eventHandler = new EventHandler();
+
         this.address = address;
         this.protocol = protocol;
         this.backlog = backlog;
@@ -87,6 +92,8 @@ public class Server {
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
+        this.eventHandler = new EventHandler();
+
         this.address = address;
         this.protocol = protocol;
         this.backlog = Server.DEFAULT_BACKLOG;
@@ -102,6 +109,8 @@ public class Server {
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
 
+        this.eventHandler = new EventHandler();
+
         this.address = address;
         this.protocol = Server.DEFAULT_PROTOCOL;
         this.backlog = Server.DEFAULT_BACKLOG;
@@ -113,6 +122,8 @@ public class Server {
     public Server() {
         this.connectionHandler = new ConnectionHandler(this);
         this.connectionManager = new ConnectionManager();
+
+        this.eventHandler = new EventHandler();
 
         this.address = null;
         this.protocol = Server.DEFAULT_PROTOCOL;
@@ -178,6 +189,13 @@ public class Server {
                 this.isRunning = false;
             }
         }
+    }
+
+    /**
+     * @return EventHandler.
+     */
+    public synchronized EventHandler getEventHandler() {
+        return this.eventHandler;
     }
 
     /**
