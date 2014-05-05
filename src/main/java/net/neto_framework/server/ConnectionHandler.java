@@ -57,7 +57,8 @@ public class ConnectionHandler extends Thread {
             if (this.server.getProtocol() == Protocol.TCP) {
                 try {
                     Socket socket = this.server.getTcpSocket().accept();
-                    this.server.getConnectionManager().addTcpConnection(socket);
+                    this.server.getConnectionManager().addConnection(
+                            this.server, socket);
                 } catch (IOException e) {
                     ConnectionException exception = new ConnectionException(
                             "I/O Error when trying to accept a TCP socket connection.",
@@ -77,14 +78,9 @@ public class ConnectionHandler extends Thread {
 
                     if (new String(packet.getData())
                             .equals(ConnectionHandler.MAGIC_STRING)) {
-                        String id = String.valueOf(this.server
-                                .getConnectionManager().addUdpConnection(
-                                        packet.getAddress()));
-                        byte[] idBuffer = id.getBytes();
-                        DatagramPacket idPacket = new DatagramPacket(idBuffer,
-                                idBuffer.length, packet.getAddress(),
+                        this.server.getConnectionManager().addConnection(
+                                this.server, packet.getAddress(),
                                 packet.getPort());
-                        this.server.getUdpSocket().send(idPacket);
                     } else {
                         ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
                                 this.server, packet.getAddress(),
@@ -93,7 +89,7 @@ public class ConnectionHandler extends Thread {
                     }
                 } catch (IOException e) {
                     ConnectionException exception = new ConnectionException(
-                            "I/O Error when trying to accept a UDP handshake packet.",
+                            "I/O Error when trying to read a UDP handshake packet.",
                             e);
                     ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
                             this.server, this.server.getProtocol(), exception);

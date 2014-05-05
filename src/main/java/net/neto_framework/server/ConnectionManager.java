@@ -30,96 +30,75 @@ import java.util.HashMap;
 public class ConnectionManager {
     private int idPool = 0;
 
-    private volatile HashMap<Integer, Socket> tcpConnections = new HashMap<Integer, Socket>();
-    private volatile HashMap<Integer, InetAddress> udpConnections = new HashMap<Integer, InetAddress>();
+    private volatile HashMap<Integer, Connection> connections = new HashMap<Integer, Connection>();
 
     /**
      * Add given TCP connection into pool.
      * 
+     * @param server
+     *            Server.
      * @param socket
      *            Socket of new TCP connection.
      * @return Unique connection ID.
      */
-    public int addTcpConnection(Socket socket) {
-        this.tcpConnections.put(this.idPool++, socket);
-        System.out.println("TCP Connection Added");
+    public int addConnection(Server server, Socket socket) {
+        int id = this.idPool++;
+        Connection connection = new Connection(server, id, socket);
+        this.connections.put(id, connection);
+        (new Thread(connection)).start();
+
         return this.idPool;
     }
 
     /**
      * Add given UDP connection into pool.
      * 
+     * @param server
+     *            Server.
      * @param address
      *            InetAddress of new UDP connection.
+     * @param port
+     *            Port number of new UDP connection.
      * @return Unique connection ID.
      */
-    public int addUdpConnection(InetAddress address) {
-        this.udpConnections.put(this.idPool++, address);
-        System.out.println("UDP Connection Added");
+    public int addConnection(Server server, InetAddress address, int port) {
+        int id = this.idPool++;
+        Connection connection = new Connection(server, id, address, port);
+        this.connections.put(id, connection);
+        (new Thread(connection)).start();
+
         return this.idPool;
     }
 
     /**
-     * Remove TCP connection.
+     * Remove connection.
      * 
      * @param id
      *            Unique ID of connection.
      */
-    public void removeTcpConnection(int id) {
-        this.tcpConnections.remove(id);
+    public void removeConnection(int id) {
+        this.connections.remove(id);
     }
 
     /**
-     * Remove UDP connection.
+     * If connection pool contains a connection with the given ID.
      * 
      * @param id
-     *            Unique ID of connection.
-     */
-    public void removeUdpConnection(int id) {
-        this.udpConnections.remove(id);
-    }
-
-    /**
-     * If TCP connection pool contains a connection with the given ID.
-     * 
-     * @param id
-     *            ID.
+     *            Connection ID.
      * @return If connection exists.
      */
-    public boolean hasTcpConnection(int id) {
-        return this.tcpConnections.containsKey(id) ? true : false;
+    public boolean hasConnection(int id) {
+        return this.connections.containsKey(id) ? true : false;
     }
 
     /**
-     * If UDP connection pool contains a connection with the given ID.
+     * Get Connection handle for connection with given ID.
      * 
      * @param id
-     *            ID.
-     * @return If connection exists.
+     *            Connection ID.
+     * @return Connection.
      */
-    public boolean hasUdpConnection(int id) {
-        return this.udpConnections.containsKey(id) ? true : false;
-    }
-
-    /**
-     * Get TCP socket for connection with given ID.
-     * 
-     * @param id
-     *            ID.
-     * @return TCP Socket.
-     */
-    public Socket getTcpConnection(int id) {
-        return this.tcpConnections.get(id);
-    }
-
-    /**
-     * Get InetAdress for connection with given ID.
-     * 
-     * @param id
-     *            ID.
-     * @return UDP InetAddress.
-     */
-    public InetAddress getUdpConnection(int id) {
-        return this.udpConnections.get(id);
+    public Connection getConnection(int id) {
+        return this.connections.get(id);
     }
 }

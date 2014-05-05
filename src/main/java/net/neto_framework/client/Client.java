@@ -27,6 +27,7 @@ import java.net.SocketException;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.client.exceptions.ClientException;
+import net.neto_framework.server.ConnectionHandler;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -44,8 +45,6 @@ public class Client {
 
     private Socket tcpSocket;
     private DatagramSocket udpSocket;
-
-    private int id;
 
     private boolean isConnected;
 
@@ -79,6 +78,27 @@ public class Client {
                     throw new ClientException(
                             "Failed to connect to given SocketAddress", e);
                 }
+
+                try {
+                    this.tcpSocket.getOutputStream().write(
+                            Client.MAGIC_STRING.getBytes());
+
+                    byte[] magicStringBuffer = new byte[ConnectionHandler.MAGIC_STRING
+                            .getBytes().length];
+                    this.tcpSocket.getInputStream().read(magicStringBuffer);
+                    String sentMagicString = new String(magicStringBuffer);
+
+                    if (sentMagicString.equals(Client.MAGIC_STRING)) {
+                        System.out.println("Connected to server (TCP)!");
+                    } else {
+                        throw new ClientException(
+                                "Received invalid handshake from server",
+                                new Exception());
+                    }
+                } catch (IOException e) {
+                    throw new ClientException(
+                            "Failed to send/receive handshake packet", e);
+                }
             } else if (this.protocol == Protocol.UDP) {
                 try {
                     this.udpSocket = new DatagramSocket();
@@ -86,21 +106,28 @@ public class Client {
                     throw new ClientException("Failed to create UDP socket", e);
                 }
 
-                byte[] buffer = Client.MAGIC_STRING.getBytes();
-                DatagramPacket packet = new DatagramPacket(buffer,
-                        buffer.length, this.address.getInetAddress(),
-                        this.address.getPort());
-
                 try {
+                    byte[] buffer = Client.MAGIC_STRING.getBytes();
+                    DatagramPacket packet = new DatagramPacket(buffer,
+                            buffer.length, this.address.getInetAddress(),
+                            this.address.getPort());
+
                     this.udpSocket.send(packet);
 
-                    DatagramPacket idPacket = new DatagramPacket(new byte[256],
-                            new byte[256].length);
+                    byte[] magicStringBuffer = new byte[ConnectionHandler.MAGIC_STRING
+                            .getBytes().length];
+                    DatagramPacket idPacket = new DatagramPacket(
+                            magicStringBuffer, magicStringBuffer.length);
                     this.udpSocket.receive(idPacket);
+                    String sentMagicString = new String(idPacket.getData());
 
-                    this.id = Integer.parseInt(new String(idPacket.getData())
-                            .trim());
-                    System.out.println("Client ID: " + id);
+                    if (sentMagicString.equals(Client.MAGIC_STRING)) {
+                        System.out.println("Connected to server (UDP)!");
+                    } else {
+                        throw new ClientException(
+                                "Received invalid handshake from server",
+                                new Exception());
+                    }
                 } catch (IOException e) {
                     throw new ClientException(
                             "Failed to send/receive handshake packet", e);
