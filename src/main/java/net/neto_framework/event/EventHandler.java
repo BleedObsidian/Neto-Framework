@@ -22,6 +22,11 @@ import java.util.ArrayList;
 
 import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
+import net.neto_framework.client.event.events.ClientInvalidPacket;
+import net.neto_framework.client.event.events.ClientPacketException;
+import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientServerConnect;
+import net.neto_framework.client.event.events.ClientServerDisconnect;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ServerClientConnect;
@@ -134,6 +139,32 @@ public class EventHandler {
      *            - ClientEvent.
      */
     public void callEvent(ClientEvent event) {
-
+        switch (event.getEvent()) {
+        case CLIENT_SERVER_CONNECT:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientServerConnect((ClientServerConnect) event);
+            }
+            break;
+        case CLIENT_SERVER_DISCONNECT:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientServerDisconnect((ClientServerDisconnect) event);
+            }
+            break;
+        case CLIENT_RECEIVE_INVALID_HANDSHAKE:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientReceiveInvalidHandshake((ClientReceiveInvalidHandshake) event);
+            }
+            break;
+        case CLIENT_INVALID_PACKET:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientInvalidPacket((ClientInvalidPacket) event);
+            }
+            break;
+        case CLIENT_PACKET_EXCEPTION:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientPacketException((ClientPacketException) event);
+            }
+            break;
+        }
     }
 }

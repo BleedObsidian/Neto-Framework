@@ -18,6 +18,12 @@
 
 package net.neto_framework.client.event;
 
+import net.neto_framework.client.event.events.ClientInvalidPacket;
+import net.neto_framework.client.event.events.ClientPacketException;
+import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientServerConnect;
+import net.neto_framework.client.event.events.ClientServerDisconnect;
+
 /**
  * An abstract class that allows actions to be taken when specified events are
  * called on the client.
@@ -25,4 +31,54 @@ package net.neto_framework.client.event;
  * @author BleedObsidian (Jesse Prescott)
  */
 public abstract class ClientEventListener {
+    /**
+     * Fired when the client successfully connects to a server.
+     * 
+     * @param event
+     *            ClientServerConnect.
+     */
+    public void onClientServerConnect(ClientServerConnect event) {
+
+    }
+
+    /**
+     * Fired when the client disconnects from a server.
+     * 
+     * @param event
+     *            ClientServerConnect.
+     */
+    public void onClientServerDisconnect(ClientServerDisconnect event) {
+
+    }
+
+    /**
+     * Fired when the client received invalid data in the handshake packet.
+     * 
+     * @param event
+     *            ClientReceiveInvalidHandshake event.
+     */
+    public void onClientReceiveInvalidHandshake(
+            ClientReceiveInvalidHandshake event) {
+
+    }
+
+    /**
+     * Fired when the client receives an invalid packet or packet id.
+     * 
+     * @param event
+     *            ClientInvalidPacket.
+     */
+    public void onClientInvalidPacket(ClientInvalidPacket event) {
+
+    }
+
+    /**
+     * Fired when the client has a problem receiving or sending a packet.
+     * 
+     * @param event
+     *            ClientPacketException.
+     */
+    public void onClientPacketException(ClientPacketException event) {
+
+    }
 }

@@ -45,7 +45,7 @@ public abstract class ServerEventListener {
     }
 
     /**
-     * Fired when the server received an invalid data in the handshake packet.
+     * Fired when the server received invalid data in the handshake packet.
      * 
      * @param event
      *            ServerReceiveInvalidHandshake event.

@@ -16,36 +16,36 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.server.event.events;
+package net.neto_framework.client.event.events;
 
 import java.net.InetAddress;
 
-import net.neto_framework.server.Server;
-import net.neto_framework.server.event.ServerEvent;
-import net.neto_framework.server.event.ServerEvents;
+import net.neto_framework.client.Client;
+import net.neto_framework.client.event.ClientEvent;
+import net.neto_framework.client.event.ClientEvents;
 
 /**
- * An event that is fired when the server receives an invalid handshake packet.
+ * An event that is fired when the client receives an invalid handshake packet.
  * 
  * @author BleedObsidian (Jesse Precott)
  */
-public class ServerReceiveInvalidHandshake extends ServerEvent {
+public class ClientReceiveInvalidHandshake extends ClientEvent {
     private final InetAddress address;
     private final byte[] data;
 
     /**
-     * New ServerReceiveInvalidHandshake event.
+     * New ClientReceiveInvalidHandshake event.
      * 
-     * @param server
-     *            Server.
+     * @param client
+     *            Client.
      * @param address
      *            Address of handshake origin.
      * @param data
      *            Data received instead of magic number.
      */
-    public ServerReceiveInvalidHandshake(Server server, InetAddress address,
+    public ClientReceiveInvalidHandshake(Client client, InetAddress address,
             byte[] data) {
-        super(server, ServerEvents.SERVER_RECEIVE_INVALID_HANDSHAKE);
+        super(client, ClientEvents.CLIENT_RECEIVE_INVALID_HANDSHAKE);
 
         this.address = address;
         this.data = data;

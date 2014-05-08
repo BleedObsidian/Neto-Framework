@@ -24,5 +24,5 @@ package net.neto_framework.client.event;
  * @author BleedObsidian (Jesse Prescott)
  */
 public enum ClientEvents {
-
+    CLIENT_SERVER_CONNECT, CLIENT_SERVER_DISCONNECT, CLIENT_RECEIVE_INVALID_HANDSHAKE, CLIENT_INVALID_PACKET, CLIENT_PACKET_EXCEPTION;
 }

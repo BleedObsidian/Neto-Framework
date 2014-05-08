@@ -28,7 +28,11 @@ import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
+import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientServerConnect;
+import net.neto_framework.client.event.events.ClientServerDisconnect;
 import net.neto_framework.client.exceptions.ClientException;
+import net.neto_framework.event.EventHandler;
 import net.neto_framework.server.ConnectionHandler;
 
 /**
@@ -43,6 +47,7 @@ public class Client {
     public final static String MAGIC_STRING = "1293";
 
     private final PacketManager packetManager;
+    private final EventHandler eventHandler;
 
     private final SocketAddress address;
     private final Protocol protocol;
@@ -67,6 +72,7 @@ public class Client {
     public Client(PacketManager packetManager, SocketAddress address,
             Protocol protocol) {
         this.packetManager = packetManager;
+        this.eventHandler = new EventHandler();
         this.address = address;
         this.protocol = protocol;
     }
@@ -104,6 +110,10 @@ public class Client {
                         this.isConnected = true;
                         (new Thread(this.connection)).start();
                     } else {
+                        ClientReceiveInvalidHandshake event = new ClientReceiveInvalidHandshake(
+                                this, this.tcpSocket.getInetAddress(),
+                                magicStringBuffer);
+                        this.eventHandler.callEvent(event);
                         throw new ClientException(
                                 "Received invalid handshake from server",
                                 new Exception());
@@ -142,6 +152,10 @@ public class Client {
                         this.isConnected = true;
                         (new Thread(this.connection)).start();
                     } else {
+                        ClientReceiveInvalidHandshake event = new ClientReceiveInvalidHandshake(
+                                this, this.udpSocket.getInetAddress(),
+                                idPacket.getData());
+                        this.eventHandler.callEvent(event);
                         throw new ClientException(
                                 "Received invalid handshake from server",
                                 new Exception());
@@ -151,6 +165,9 @@ public class Client {
                             "Failed to send/receive handshake packet", e);
                 }
             }
+
+            this.eventHandler.callEvent(new ClientServerConnect(this,
+                    this.connection));
         }
     }
 
@@ -174,6 +191,9 @@ public class Client {
                 this.udpSocket.close();
                 this.isConnected = false;
             }
+
+            this.eventHandler.callEvent(new ClientServerDisconnect(this,
+                    this.connection));
         }
     }
 
@@ -182,6 +202,13 @@ public class Client {
      */
     public synchronized PacketManager getPacketManager() {
         return this.packetManager;
+    }
+
+    /**
+     * @return EventHandler.
+     */
+    public synchronized EventHandler getEventHandler() {
+        return this.eventHandler;
     }
 
     /**

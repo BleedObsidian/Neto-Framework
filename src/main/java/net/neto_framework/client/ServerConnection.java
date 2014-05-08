@@ -22,6 +22,8 @@ import java.io.IOException;
 
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
+import net.neto_framework.client.event.events.ClientPacketException;
+import net.neto_framework.exceptions.PacketException;
 
 /**
  * A connection thread to handle the server connection.
@@ -55,14 +57,29 @@ public class ServerConnection implements Runnable {
                         this.client.getPacketManager().receive(packetID,
                                 this.connection);
                     } catch (InstantiationException e) {
-
+                        PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.client.getEventHandler().callEvent(
+                                new ClientPacketException(this.client,
+                                        exception));
                     } catch (IllegalAccessException e) {
-
+                        PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.client.getEventHandler().callEvent(
+                                new ClientPacketException(this.client,
+                                        exception));
                     }
                 } else {
+                    PacketException exception = new PacketException(
+                            "Invalid packet received.");
+                    this.client.getEventHandler().callEvent(
+                            new ClientPacketException(this.client, exception));
                 }
             } catch (IOException e) {
-
+                PacketException exception = new PacketException(
+                        "Failed to receive packet ID.", e);
+                this.client.getEventHandler().callEvent(
+                        new ClientPacketException(this.client, exception));
             }
         }
     }
