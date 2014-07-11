@@ -21,6 +21,7 @@ package net.neto_framework.server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
+import net.neto_framework.Connection;
 
 import net.neto_framework.Protocol;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
@@ -33,21 +34,20 @@ import net.neto_framework.server.exceptions.ConnectionException;
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class ConnectionHandler extends Thread {
+public class ServerConnectionHandler extends Thread {
+    
     /**
-     * A magic string that should be within a handshake packet.
+     * Server.
      */
-    public final static String MAGIC_STRING = "1293";
-
     private final Server server;
 
     /**
-     * New ConnectionHandler.
+     * New ServerConnectionHandler.
      * 
      * @param server
-     *            Server that is using this ConnectionHandler.
+     *            Server that is using this ServerConnectionHandler.
      */
-    public ConnectionHandler(Server server) {
+    public ServerConnectionHandler(Server server) {
         this.server = server;
     }
 
@@ -68,7 +68,7 @@ public class ConnectionHandler extends Thread {
                     this.server.getEventHandler().callEvent(event);
                 }
             } else if (this.server.getProtocol() == Protocol.UDP) {
-                byte[] buffer = new byte[ConnectionHandler.MAGIC_STRING
+                byte[] buffer = new byte[Connection.MAGIC_STRING
                         .getBytes().length];
                 DatagramPacket packet = new DatagramPacket(buffer,
                         buffer.length);
@@ -77,7 +77,7 @@ public class ConnectionHandler extends Thread {
                     this.server.getUdpSocket().receive(packet);
 
                     if (new String(packet.getData())
-                            .equals(ConnectionHandler.MAGIC_STRING)) {
+                            .equals(Connection.MAGIC_STRING)) {
                         this.server.getConnectionManager().addConnection(
                                 this.server, packet.getAddress(),
                                 packet.getPort());

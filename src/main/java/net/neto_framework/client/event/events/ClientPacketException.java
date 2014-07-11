@@ -30,6 +30,10 @@ import net.neto_framework.exceptions.PacketException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientPacketException extends ClientEvent {
+    
+    /**
+     * PacketException thrown.
+     */
     private final PacketException exception;
 
     /**

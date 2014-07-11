@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
+import net.neto_framework.PacketReceiver;
 import net.neto_framework.client.event.events.ClientPacketException;
 import net.neto_framework.exceptions.PacketException;
 
@@ -31,7 +32,15 @@ import net.neto_framework.exceptions.PacketException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerConnection implements Runnable {
+    
+    /**
+     * Client.
+     */
     private final Client client;
+    
+    /**
+     * Server Connection.
+     */
     private final Connection connection;
 
     /**
@@ -55,7 +64,7 @@ public class ServerConnection implements Runnable {
                 if (this.client.getPacketManager().hasPacket(packetID)) {
                     try {
                         this.client.getPacketManager().receive(packetID,
-                                this.connection);
+                                this.connection, PacketReceiver.CLIENT);
                     } catch (InstantiationException e) {
                         PacketException exception = new PacketException(
                                 "Failed to create instance of packet.", e);
@@ -88,7 +97,7 @@ public class ServerConnection implements Runnable {
      * Send server packet.
      * 
      * @param packet
-     *            - Packet.
+     *            Packet.
      * @throws IOException
      *             If fails to send packet.
      */

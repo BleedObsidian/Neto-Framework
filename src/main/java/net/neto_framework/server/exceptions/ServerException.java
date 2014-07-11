@@ -24,6 +24,10 @@ package net.neto_framework.server.exceptions;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerException extends Exception {
+    
+    /**
+     * SerialVersionUID.
+     */
     private static final long serialVersionUID = -1234551643243035737L;
 
     /**

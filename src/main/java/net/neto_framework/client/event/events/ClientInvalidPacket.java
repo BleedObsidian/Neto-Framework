@@ -30,7 +30,15 @@ import net.neto_framework.exceptions.PacketException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientInvalidPacket extends ClientEvent {
+    
+    /**
+     * ID of packet.
+     */
     private final int id;
+    
+    /**
+     * PacketException thrown.
+     */
     private final PacketException exception;
 
     /**

@@ -43,46 +43,54 @@ import net.neto_framework.server.event.events.ServerStop;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class EventHandler {
+    
+    /**
+     * All registered ServerEvent listeners.
+     */
     private final ArrayList<ServerEventListener> serverEventListeners = new ArrayList<ServerEventListener>();
+    
+    /**
+     * All registered ClientEvent listeners.
+     */
     private final ArrayList<ClientEventListener> clientEventListeners = new ArrayList<ClientEventListener>();
 
     /**
-     * Add ServerEventListener.
+     * Register ServerEventListener.
      * 
      * @param listener
      *            ServerEventListener.
      */
-    public void addServerEventListener(ServerEventListener listener) {
+    public void registerServerEventListener(ServerEventListener listener) {
         this.serverEventListeners.add(listener);
     }
 
     /**
-     * Add ClientEventListener.
+     * Register ClientEventListener.
      * 
      * @param listener
      *            ClientEventListener.
      */
-    public void addClientEventListener(ClientEventListener listener) {
+    public void registerClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.add(listener);
     }
 
     /**
-     * Remove ServerEventListener.
+     * Unregister ServerEventListener.
      * 
      * @param listener
      *            ServerEventListener.
      */
-    public void removeServerEventListener(ServerEventListener listener) {
+    public void unregisterServerEventListener(ServerEventListener listener) {
         this.serverEventListeners.remove(listener);
     }
 
     /**
-     * Remove ClientEventListener.
+     * Unregister ClientEventListener.
      * 
      * @param listener
      *            ClientEventListener.
      */
-    public void removeClientEventListener(ClientEventListener listener) {
+    public void unregisterClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.remove(listener);
     }
 
@@ -90,7 +98,7 @@ public class EventHandler {
      * Call server event.
      * 
      * @param event
-     *            - ServerEvent.
+     *            ServerEvent.
      */
     public void callEvent(ServerEvent event) {
         switch (event.getEvent()) {
@@ -136,7 +144,7 @@ public class EventHandler {
      * Call client event.
      * 
      * @param event
-     *            - ClientEvent.
+     *            ClientEvent.
      */
     public void callEvent(ClientEvent event) {
         switch (event.getEvent()) {

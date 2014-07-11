@@ -48,20 +48,54 @@ public class Server {
      */
     public static final Protocol DEFAULT_PROTOCOL = Protocol.TCP;
 
+    /**
+     * Server PacketManager.
+     */
     private final PacketManager packetManager;
 
-    private final ConnectionHandler connectionHandler;
-    private final ConnectionManager connectionManager;
+    /**
+     * ServerConnectionHandler.
+     */
+    private final ServerConnectionHandler connectionHandler;
+    
+    /**
+     * ServerConnectionManager.
+     */
+    private final ServerConnectionManager connectionManager;
 
+    /**
+     * Server EventHandler.
+     */
     private final EventHandler eventHandler;
 
+    /**
+     * Server SocketAddress to run on.
+     */
     private final SocketAddress address;
+    
+    /**
+     * Server Protocol to use.
+     */
     private final Protocol protocol;
+    
+    /**
+     * Server backlog.
+     */
     private final int backlog;
 
+    /**
+     * TCP Socket.
+     */
     private ServerSocket tcpSocket;
+    
+    /**
+     * UDP Socket.
+     */
     private DatagramSocket udpSocket;
 
+    /**
+     * If server is running.
+     */
     private boolean isRunning;
 
     /**
@@ -79,8 +113,8 @@ public class Server {
     public Server(PacketManager packetManager, SocketAddress address,
             Protocol protocol, int backlog) {
         this.packetManager = new PacketManager();
-        this.connectionHandler = new ConnectionHandler(this);
-        this.connectionManager = new ConnectionManager();
+        this.connectionHandler = new ServerConnectionHandler(this);
+        this.connectionManager = new ServerConnectionManager();
 
         this.eventHandler = new EventHandler();
 
@@ -102,8 +136,8 @@ public class Server {
     public Server(PacketManager packetManager, SocketAddress address,
             Protocol protocol) {
         this.packetManager = packetManager;
-        this.connectionHandler = new ConnectionHandler(this);
-        this.connectionManager = new ConnectionManager();
+        this.connectionHandler = new ServerConnectionHandler(this);
+        this.connectionManager = new ServerConnectionManager();
 
         this.eventHandler = new EventHandler();
 
@@ -122,8 +156,8 @@ public class Server {
      */
     public Server(PacketManager packetManager, SocketAddress address) {
         this.packetManager = packetManager;
-        this.connectionHandler = new ConnectionHandler(this);
-        this.connectionManager = new ConnectionManager();
+        this.connectionHandler = new ServerConnectionHandler(this);
+        this.connectionManager = new ServerConnectionManager();
 
         this.eventHandler = new EventHandler();
 
@@ -140,8 +174,8 @@ public class Server {
      */
     public Server(PacketManager packetManager) {
         this.packetManager = packetManager;
-        this.connectionHandler = new ConnectionHandler(this);
-        this.connectionManager = new ConnectionManager();
+        this.connectionHandler = new ServerConnectionHandler(this);
+        this.connectionManager = new ServerConnectionManager();
 
         this.eventHandler = new EventHandler();
 
@@ -274,9 +308,9 @@ public class Server {
     }
 
     /**
-     * @return ConnectionManager of this server.
+     * @return ServerConnectionManager of this server.
      */
-    public synchronized ConnectionManager getConnectionManager() {
+    public synchronized ServerConnectionManager getConnectionManager() {
         return this.connectionManager;
     }
 }

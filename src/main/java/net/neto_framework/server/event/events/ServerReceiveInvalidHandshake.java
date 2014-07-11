@@ -30,7 +30,15 @@ import net.neto_framework.server.event.ServerEvents;
  * @author BleedObsidian (Jesse Precott)
  */
 public class ServerReceiveInvalidHandshake extends ServerEvent {
+    
+    /**
+     * InetAddress of invalid handshake.
+     */
     private final InetAddress address;
+    
+    /**
+     * Data within invalid handshake.
+     */
     private final byte[] data;
 
     /**

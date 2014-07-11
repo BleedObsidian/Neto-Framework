@@ -26,7 +26,15 @@ import net.neto_framework.client.Client;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientEvent {
+    
+    /**
+     * Client.
+     */
     private final Client client;
+    
+    /**
+     * ClientEvents.
+     */
     private final ClientEvents event;
 
     /**

@@ -30,7 +30,15 @@ import net.neto_framework.client.event.ClientEvents;
  * @author BleedObsidian (Jesse Precott)
  */
 public class ClientReceiveInvalidHandshake extends ClientEvent {
+    
+    /**
+     * InetAddress of InvalidHandshake.
+     */
     private final InetAddress address;
+    
+    /**
+     * Data within invalid handshake.
+     */
     private final byte[] data;
 
     /**

@@ -26,7 +26,15 @@ import net.neto_framework.server.Server;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerEvent {
+    
+    /**
+     * Server.
+     */
     private final Server server;
+    
+    /**
+     * ServerEvents.
+     */
     private final ServerEvents event;
 
     /**

@@ -27,26 +27,34 @@ import java.util.HashMap;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class PacketManager {
+    
+    /**
+     * HashMap of all registered packets.
+     */
     private final HashMap<Integer, Packet> packets = new HashMap<Integer, Packet>();
 
     /**
-     * Add packet.
+     * Register packet.
      * 
      * @param packet
      *            Packet.
      */
-    public void addPacket(Packet packet) {
-        this.packets.put(packet.getID(), packet);
+    public void registerPacket(Packet packet) {
+        if(!this.packets.containsKey(packet.getID())) {
+            this.packets.put(packet.getID(), packet);
+        }
     }
 
     /**
-     * Remove packet.
+     * Unregister packet.
      * 
      * @param packet
      *            Packet.
      */
-    public void removePacket(Packet packet) {
-        this.packets.remove(packet.getID());
+    public void unregisterPacket(Packet packet) {
+        if(this.packets.containsKey(packet.getID())) {
+            this.packets.remove(packet.getID());
+        }
     }
 
     /**
@@ -56,6 +64,8 @@ public class PacketManager {
      *            Packet ID.
      * @param connection
      *            Connection.
+     * @param receiver
+     *            PacketReceiver.
      * @throws InstantiationException
      *             If fails to create packet.
      * @throws IllegalAccessException
@@ -63,11 +73,11 @@ public class PacketManager {
      * @throws IOException
      *             If fails to receive packet.
      */
-    public void receive(int id, Connection connection)
+    public void receive(int id, Connection connection, PacketReceiver receiver)
             throws InstantiationException, IllegalAccessException, IOException {
         Packet packet = this.packets.get(id).getClass().newInstance();
         packet.receive(connection);
-        packet.onReceive(packet);
+        packet.onReceive(packet, receiver);
     }
 
     /**

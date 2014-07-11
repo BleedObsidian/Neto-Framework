@@ -29,6 +29,10 @@ import net.neto_framework.client.event.ClientEvents;
  * @author BleedObsidian (Jesse Precott)
  */
 public class ClientServerConnect extends ClientEvent {
+    
+    /**
+     * ServerConnection.
+     */
     private final ServerConnection connection;
 
     /**

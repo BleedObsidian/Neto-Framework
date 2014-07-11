@@ -33,7 +33,6 @@ import net.neto_framework.client.event.events.ClientServerConnect;
 import net.neto_framework.client.event.events.ClientServerDisconnect;
 import net.neto_framework.client.exceptions.ClientException;
 import net.neto_framework.event.EventHandler;
-import net.neto_framework.server.ConnectionHandler;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -41,22 +40,45 @@ import net.neto_framework.server.ConnectionHandler;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class Client {
-    /**
-     * A magic string that should be within a handshake packet.
-     */
-    public final static String MAGIC_STRING = "1293";
 
+    /**
+     * Client PacketManager.
+     */
     private final PacketManager packetManager;
+            
+    /**
+     * Client EventHandler.
+     */
     private final EventHandler eventHandler;
 
+    /**
+     * SocketAddress of server.
+     */
     private final SocketAddress address;
+    
+    /**
+     * Protocol in use.
+     */
     private final Protocol protocol;
 
+    /**
+     * TCP Socket.
+     */
     private Socket tcpSocket;
+    
+    /**
+     * UDP Socket.
+     */
     private DatagramSocket udpSocket;
 
+    /**
+     * ServerConnection of Client.
+     */
     private ServerConnection connection;
 
+    /**
+     * If Client is connected to a Server.
+     */
     private boolean isConnected;
 
     /**
@@ -97,14 +119,14 @@ public class Client {
 
                 try {
                     this.tcpSocket.getOutputStream().write(
-                            Client.MAGIC_STRING.getBytes());
+                            Connection.MAGIC_STRING.getBytes());
 
-                    byte[] magicStringBuffer = new byte[ConnectionHandler.MAGIC_STRING
+                    byte[] magicStringBuffer = new byte[Connection.MAGIC_STRING
                             .getBytes().length];
                     this.tcpSocket.getInputStream().read(magicStringBuffer);
                     String sentMagicString = new String(magicStringBuffer);
 
-                    if (sentMagicString.equals(Client.MAGIC_STRING)) {
+                    if (sentMagicString.equals(Connection.MAGIC_STRING)) {
                         this.connection = new ServerConnection(this,
                                 new Connection(this.tcpSocket));
                         this.isConnected = true;
@@ -130,21 +152,21 @@ public class Client {
                 }
 
                 try {
-                    byte[] buffer = Client.MAGIC_STRING.getBytes();
+                    byte[] buffer = Connection.MAGIC_STRING.getBytes();
                     DatagramPacket packet = new DatagramPacket(buffer,
                             buffer.length, this.address.getInetAddress(),
                             this.address.getPort());
 
                     this.udpSocket.send(packet);
 
-                    byte[] magicStringBuffer = new byte[ConnectionHandler.MAGIC_STRING
+                    byte[] magicStringBuffer = new byte[Connection.MAGIC_STRING
                             .getBytes().length];
                     DatagramPacket idPacket = new DatagramPacket(
                             magicStringBuffer, magicStringBuffer.length);
                     this.udpSocket.receive(idPacket);
                     String sentMagicString = new String(idPacket.getData());
 
-                    if (sentMagicString.equals(Client.MAGIC_STRING)) {
+                    if (sentMagicString.equals(Connection.MAGIC_STRING)) {
                         this.connection = new ServerConnection(this,
                                 new Connection(this.udpSocket,
                                         this.udpSocket.getInetAddress(),

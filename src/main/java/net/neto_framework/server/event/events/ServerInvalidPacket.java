@@ -30,7 +30,15 @@ import net.neto_framework.server.event.ServerEvents;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerInvalidPacket extends ServerEvent {
+    
+    /**
+     * Packet ID.
+     */
     private final int id;
+    
+    /**
+     * PacketException thrown.
+     */
     private final PacketException exception;
 
     /**

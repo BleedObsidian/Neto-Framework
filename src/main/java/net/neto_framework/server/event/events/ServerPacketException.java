@@ -30,6 +30,10 @@ import net.neto_framework.server.event.ServerEvents;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerPacketException extends ServerEvent {
+    
+    /**
+     * PacketException thrown.
+     */
     private final PacketException exception;
 
     /**

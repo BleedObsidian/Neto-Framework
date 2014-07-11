@@ -46,9 +46,11 @@ public interface Packet {
      * Fired when this packet is received.
      * 
      * @param packet
-     *            - Packet.
+     *            Packet.
+     * @param receiver
+     *            PacketReceiver.
      */
-    public void onReceive(Packet packet);
+    public void onReceive(Packet packet, PacketReceiver receiver);
 
     /**
      * @return Unique packet ID.

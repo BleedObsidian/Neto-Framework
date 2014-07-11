@@ -23,6 +23,7 @@ import java.net.DatagramPacket;
 
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
+import net.neto_framework.PacketReceiver;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.event.events.ServerClientConnect;
@@ -38,9 +39,20 @@ import net.neto_framework.server.exceptions.ConnectionException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientConnection implements Runnable {
+    
+    /**
+     * ID of ClientConnection.
+     */
     private final int id;
 
+    /**
+     * Server.
+     */
     private final Server server;
+    
+    /**
+     * Connection of ClientConnection.
+     */
     private final Connection connection;
 
     /**
@@ -59,16 +71,19 @@ public class ClientConnection implements Runnable {
         this.connection = connection;
     }
 
+    /**
+     * Thread run.
+     */
     public void run() {
-        byte[] magicStringBuffer = ConnectionHandler.MAGIC_STRING.getBytes();
+        byte[] magicStringBuffer = Connection.MAGIC_STRING.getBytes();
 
         if (this.server.getProtocol() == Protocol.TCP) {
             try {
-                byte[] buffer = new byte[ConnectionHandler.MAGIC_STRING
+                byte[] buffer = new byte[Connection.MAGIC_STRING
                         .getBytes().length];
                 this.connection.getTCPSocket().getInputStream().read(buffer);
 
-                if (!new String(buffer).equals(ConnectionHandler.MAGIC_STRING)) {
+                if (!new String(buffer).equals(Connection.MAGIC_STRING)) {
                     ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
                             this.server, this.connection.getAddress(), buffer);
                     this.server.getEventHandler().callEvent(event);
@@ -123,7 +138,7 @@ public class ClientConnection implements Runnable {
                 if (this.server.getPacketManager().hasPacket(packetID)) {
                     try {
                         this.server.getPacketManager().receive(packetID,
-                                this.connection);
+                                this.connection, PacketReceiver.SERVER);
                     } catch (InstantiationException e) {
                         PacketException exception = new PacketException(
                                 "Failed to create instance of packet.", e);
@@ -157,7 +172,7 @@ public class ClientConnection implements Runnable {
      * Send client packet.
      * 
      * @param packet
-     *            - Packet.
+     *            Packet.
      * @throws IOException
      *             If fails to send packet.
      */

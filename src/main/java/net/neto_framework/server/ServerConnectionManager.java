@@ -29,9 +29,16 @@ import net.neto_framework.Connection;
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class ConnectionManager {
+public class ServerConnectionManager {
+    
+    /**
+     * ID Pool.
+     */
     private int idPool = 0;
 
+    /**
+     * All ClientConnections.
+     */
     private volatile HashMap<Integer, ClientConnection> connections = new HashMap<Integer, ClientConnection>();
 
     /**

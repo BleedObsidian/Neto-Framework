@@ -24,6 +24,10 @@ package net.neto_framework.exceptions;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class PacketException extends Exception {
+    
+    /**
+     * SerialVersionUID.
+     */
     private static final long serialVersionUID = 2157534617064673101L;
 
     /**

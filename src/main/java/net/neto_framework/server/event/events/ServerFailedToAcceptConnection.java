@@ -31,7 +31,15 @@ import net.neto_framework.server.exceptions.ConnectionException;
  * @author BleedObsidian (Jesse Precott)
  */
 public class ServerFailedToAcceptConnection extends ServerEvent {
+    
+    /**
+     * Protocol used.
+     */
     private final Protocol protocol;
+    
+    /**
+     * ConnectionException thrown.
+     */
     private final ConnectionException exception;
 
     /**

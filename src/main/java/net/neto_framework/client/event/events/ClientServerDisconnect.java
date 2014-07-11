@@ -29,6 +29,10 @@ import net.neto_framework.client.event.ClientEvents;
  * @author BleedObsidian (Jesse Precott)
  */
 public class ClientServerDisconnect extends ClientEvent {
+    
+    /**
+     * ServerConnection that was disconnected.
+     */
     private final ServerConnection connection;
 
     /**

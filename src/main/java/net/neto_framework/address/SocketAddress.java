@@ -30,7 +30,15 @@ import net.neto_framework.address.exceptions.SocketAddressException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class SocketAddress {
+    
+    /**
+     * InetAddress of socket.
+     */
     private final InetAddress address;
+    
+    /**
+     * Port of socket.
+     */
     private final int port;
 
     /**

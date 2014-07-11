@@ -31,12 +31,36 @@ import java.nio.ByteBuffer;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class Connection {
+    
+    /**
+     * A magic string that should be within a handshake packet to verify the
+     * connection is also using the Neto-Framework.
+     */
+    public static String MAGIC_STRING = "1293";
+    
+    /**
+     * Protocol that connection is using.
+     */
     private final Protocol protocol;
 
+    /**
+     * TCP Socket of connection.
+     */
     private final Socket tcpSocket;
+    
+    /**
+     * UDP Socket of connection.
+     */
     private final DatagramSocket udpSocket;
 
+    /**
+     * InetAdress of connection.
+     */
     private final InetAddress address;
+    
+    /**
+     * Port of connection.
+     */
     private final int port;
 
     /**

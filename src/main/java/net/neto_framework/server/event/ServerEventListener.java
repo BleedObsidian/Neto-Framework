@@ -41,7 +41,7 @@ public abstract class ServerEventListener {
      */
     public void onServerFailedToAcceptConnection(
             ServerFailedToAcceptConnection event) {
-        return;
+        
     }
 
     /**
