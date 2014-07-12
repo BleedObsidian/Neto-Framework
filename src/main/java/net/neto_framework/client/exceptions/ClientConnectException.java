@@ -23,7 +23,7 @@ package net.neto_framework.client.exceptions;
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class ClientException extends Exception {
+public class ClientConnectException extends Exception {
     
     /**
      * SerialVersionUID.
@@ -31,14 +31,14 @@ public class ClientException extends Exception {
     private static final long serialVersionUID = -3838357620542778348L;
 
     /**
-     * New ClientException with cause exception.
+     * New ClientConnectException with cause exception.
      * 
      * @param message
      *            Reason for exception.
      * @param exception
      *            Cause exception.
      */
-    public ClientException(String message, Exception exception) {
+    public ClientConnectException(String message, Exception exception) {
         super(message, exception);
     }
 }

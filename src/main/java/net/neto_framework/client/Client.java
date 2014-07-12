@@ -31,7 +31,7 @@ import net.neto_framework.address.SocketAddress;
 import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
 import net.neto_framework.client.event.events.ClientServerConnect;
 import net.neto_framework.client.event.events.ClientServerDisconnect;
-import net.neto_framework.client.exceptions.ClientException;
+import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
 
 /**
@@ -102,10 +102,10 @@ public class Client {
     /**
      * Attempt to connect to server.
      * 
-     * @throws ClientException
+     * @throws ClientConnectException
      *             If fails to connect to server.
      */
-    public void connect() throws ClientException {
+    public void connect() throws ClientConnectException {
         if (!this.isConnected) {
             if (this.protocol == Protocol.TCP) {
                 try {
@@ -113,7 +113,7 @@ public class Client {
                             this.address.getPort());
                     this.isConnected = true;
                 } catch (IOException e) {
-                    throw new ClientException(
+                    throw new ClientConnectException(
                             "Failed to connect to given SocketAddress", e);
                 }
 
@@ -136,19 +136,19 @@ public class Client {
                                 this, this.tcpSocket.getInetAddress(),
                                 magicStringBuffer);
                         this.eventHandler.callEvent(event);
-                        throw new ClientException(
+                        throw new ClientConnectException(
                                 "Received invalid handshake from server",
                                 new Exception());
                     }
                 } catch (IOException e) {
-                    throw new ClientException(
+                    throw new ClientConnectException(
                             "Failed to send/receive handshake packet", e);
                 }
             } else if (this.protocol == Protocol.UDP) {
                 try {
                     this.udpSocket = new DatagramSocket();
                 } catch (SocketException e) {
-                    throw new ClientException("Failed to create UDP socket", e);
+                    throw new ClientConnectException("Failed to create UDP socket", e);
                 }
 
                 try {
@@ -178,12 +178,12 @@ public class Client {
                                 this, this.udpSocket.getInetAddress(),
                                 idPacket.getData());
                         this.eventHandler.callEvent(event);
-                        throw new ClientException(
+                        throw new ClientConnectException(
                                 "Received invalid handshake from server",
                                 new Exception());
                     }
                 } catch (IOException e) {
-                    throw new ClientException(
+                    throw new ClientConnectException(
                             "Failed to send/receive handshake packet", e);
                 }
             }
@@ -196,17 +196,17 @@ public class Client {
     /**
      * Attempt to close connection.
      * 
-     * @throws ClientException
+     * @throws ClientConnectException
      *             If fails to close connection.
      */
-    public void disconnect() throws ClientException {
+    public void disconnect() throws ClientConnectException {
         if (this.isConnected) {
             if (this.protocol == Protocol.TCP) {
                 try {
                     this.tcpSocket.close();
                     this.isConnected = false;
                 } catch (IOException e) {
-                    throw new ClientException(
+                    throw new ClientConnectException(
                             "Failed to close TCP connection.", e);
                 }
             } else if (this.protocol == Protocol.UDP) {
