@@ -20,7 +20,10 @@ package net.neto_framework.server;
 
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import net.neto_framework.Connection;
@@ -107,5 +110,18 @@ public class ServerConnectionManager {
      */
     public ClientConnection getConnection(UUID uuid) {
         return this.connections.get(uuid);
+    }
+    
+    /**
+     * @return List<ClientConnection>.
+     */
+    public ArrayList<ClientConnection> getConnections() {
+        ArrayList<ClientConnection> values = new ArrayList<ClientConnection>();
+        
+        for(ClientConnection connection : this.connections.values()) {
+            values.add(connection);
+        }
+        
+        return values;
     }
 }

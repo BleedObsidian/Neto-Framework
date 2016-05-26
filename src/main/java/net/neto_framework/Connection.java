@@ -18,6 +18,8 @@
 
 package net.neto_framework;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -62,6 +64,16 @@ public class Connection {
      * Port of connection.
      */
     private final int port;
+    
+    /**
+     * The stream to read data from when using UDP.
+     */
+    private ByteArrayInputStream udpDataInputStream;
+    
+    /**
+     * The stream to write to when using UDP.
+     */
+    private ByteArrayOutputStream udpDataOutputStream;
 
     /**
      * New TCP Connection.
@@ -82,6 +94,8 @@ public class Connection {
     /**
      * New UDP Connection.
      * 
+     * @param udpSocket 
+     *            UDP Socket.
      * @param address
      *            UDP InetAddress.
      * @param port
@@ -95,6 +109,15 @@ public class Connection {
 
         this.address = address;
         this.port = port;
+        
+        this.flush();
+    }
+    
+    /**
+     * Flush the connection causing the output stream for UDP to reset.
+     */
+    public void flush() {
+        this.udpDataOutputStream = new ByteArrayOutputStream();
     }
 
     /**
@@ -109,9 +132,7 @@ public class Connection {
         if (this.protocol == Protocol.TCP) {
             this.tcpSocket.getOutputStream().write(data);
         } else {
-            DatagramPacket dataPacket = new DatagramPacket(data, data.length,
-                    this.address, this.port);
-            this.udpSocket.send(dataPacket);
+            this.udpDataOutputStream.write(data);
         }
     }
 
@@ -129,10 +150,8 @@ public class Connection {
             this.tcpSocket.getInputStream().read(buffer);
             return buffer;
         } else {
-            DatagramPacket dataPacket = new DatagramPacket(buffer,
-                    buffer.length);
-            this.udpSocket.receive(dataPacket);
-            return dataPacket.getData();
+            this.udpDataInputStream.read(buffer);
+            return buffer;
         }
     }
 
@@ -355,5 +374,20 @@ public class Connection {
      */
     public synchronized int getPort() {
         return this.port;
+    }
+    
+    /**
+     * @param inputStream ByteArrayInputStream containing the data source.
+     */
+    public synchronized void setUdpDataInputStream(ByteArrayInputStream
+            inputStream) {
+        this.udpDataInputStream = inputStream;
+    }
+    
+    /**
+     * @return ByteArrayOutputStream full of all data to send.
+     */
+    public synchronized ByteArrayOutputStream getUdpDataOutputStream() {
+        return this.udpDataOutputStream;
     }
 }

@@ -112,27 +112,13 @@ public class ClientConnection implements Runnable {
                 this.server.getEventHandler().callEvent(event);
                 return;
             }
-        } else if (this.server.getProtocol() == Protocol.UDP) {
-            DatagramPacket idPacket = new DatagramPacket(magicStringBuffer,
-                    magicStringBuffer.length, this.connection.getAddress(),
-                    this.connection.getPort());
-            try {
-                this.server.getUdpSocket().send(idPacket);
-            } catch (IOException e) {
-                ConnectionException exception = new ConnectionException(
-                        "I/O Error when trying to send a UDP handshake packet.",
-                        e);
-                ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
-                        this.server, this.server.getProtocol(), exception);
-                this.server.getEventHandler().callEvent(event);
-                return;
-            }
         }
 
         this.server.getEventHandler().callEvent(
                 new ServerClientConnect(this.server, this));
 
-        while (this.server.isRunning()) {
+        while (this.server.isRunning() && 
+                this.server.getProtocol() == Protocol.TCP) {
             try {
                 int packetID = this.connection.receiveInteger();
 
@@ -178,8 +164,21 @@ public class ClientConnection implements Runnable {
      *             If fails to send packet.
      */
     public void sendPacket(Packet packet) throws IOException {
-        this.connection.sendInteger(packet.getID());
-        packet.send(this.connection);
+        if(this.server.getProtocol() == Protocol.TCP) {
+            this.connection.sendInteger(packet.getID());
+            packet.send(this.connection);
+        } else {
+            this.connection.sendString(this.uuid.toString());
+            this.connection.sendInteger(packet.getID());
+            packet.send(this.connection);
+            byte[] data = this.connection.getUdpDataOutputStream().
+                    toByteArray();
+            
+            DatagramPacket dataPacket = new DatagramPacket(data, data.length,
+                    this.connection.getAddress(), this.connection.getPort());
+            this.server.getUdpSocket().send(dataPacket);
+            this.connection.flush();
+        }
     }
 
     /**

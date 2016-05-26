@@ -18,11 +18,15 @@
 
 package net.neto_framework.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
 import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
@@ -80,6 +84,11 @@ public class Client {
      * If Client is connected to a Server.
      */
     private boolean isConnected;
+    
+    /**
+     * UUID given by server.
+     */
+    private UUID uuid;
 
     /**
      * New client that connects to a given server address and protocol.
@@ -152,36 +161,50 @@ public class Client {
                 }
 
                 try {
-                    byte[] buffer = Connection.MAGIC_STRING.getBytes();
-                    DatagramPacket packet = new DatagramPacket(buffer,
-                            buffer.length, this.address.getInetAddress(),
+                    ByteArrayOutputStream outputStream = 
+                            new ByteArrayOutputStream();
+                    
+                    outputStream.write(ByteBuffer.allocate(4).putInt(
+                            Connection.MAGIC_STRING.getBytes().length).array());
+                    outputStream.write(Connection.MAGIC_STRING.getBytes());
+                    
+                    byte[] handshake = outputStream.toByteArray();
+                    DatagramPacket handshakePacket = new DatagramPacket(
+                            handshake, handshake.length, 
+                            this.address.getInetAddress(),
                             this.address.getPort());
+                    
+                    this.udpSocket.send(handshakePacket);
+                    
+                    System.out.println("Client: Sent handshake.");
+                    
+                    byte[] data = new byte[65508];
+                    DatagramPacket receiveHandshakePacket = new DatagramPacket(
+                            data, data.length);
+                    
+                    System.out.println("Client: Receive 1");
+                    this.udpSocket.receive(receiveHandshakePacket);
+                    System.out.println("Client: Receive 2");
+                    
+                    ByteArrayInputStream inputStream = 
+                            new ByteArrayInputStream(data);
+                    
+                    byte[] stringLengthData = new byte[4];
+                    inputStream.read(stringLengthData);
+                    int stringLength = ByteBuffer.wrap(stringLengthData).
+                            getInt();
+                    
+                    byte[] uuidData = new byte[stringLength];
+                    inputStream.read(uuidData);
+                    this.uuid = UUID.fromString(new String(uuidData));
 
-                    this.udpSocket.send(packet);
-
-                    byte[] magicStringBuffer = new byte[Connection.MAGIC_STRING
-                            .getBytes().length];
-                    DatagramPacket idPacket = new DatagramPacket(
-                            magicStringBuffer, magicStringBuffer.length);
-                    this.udpSocket.receive(idPacket);
-                    String sentMagicString = new String(idPacket.getData());
-
-                    if (sentMagicString.equals(Connection.MAGIC_STRING)) {
-                        this.connection = new ServerConnection(this,
-                                new Connection(this.udpSocket,
-                                        this.udpSocket.getInetAddress(),
-                                        this.udpSocket.getPort()));
-                        this.isConnected = true;
-                        (new Thread(this.connection)).start();
-                    } else {
-                        ClientReceiveInvalidHandshake event = new ClientReceiveInvalidHandshake(
-                                this, this.udpSocket.getInetAddress(),
-                                idPacket.getData());
-                        this.eventHandler.callEvent(event);
-                        throw new ClientConnectException(
-                                "Received invalid handshake from server",
-                                new Exception());
-                    }
+                    this.connection = new ServerConnection(this,
+                            new Connection(this.udpSocket,
+                                    this.udpSocket.getInetAddress(),
+                                    this.udpSocket.getPort()));
+                    this.isConnected = true;
+                    (new Thread(this.connection)).start();
+                    
                 } catch (IOException e) {
                     throw new ClientConnectException(
                             "Failed to send/receive handshake packet", e);
@@ -275,5 +298,12 @@ public class Client {
      */
     public synchronized boolean isConnected() {
         return this.isConnected;
+    }
+    
+    /**
+     * @return UUID given by server.
+     */
+    public synchronized UUID getUUID() {
+        return this.uuid;
     }
 }

@@ -18,14 +18,20 @@
 
 package net.neto_framework.server;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 import net.neto_framework.Connection;
+import net.neto_framework.PacketReceiver;
 
 import net.neto_framework.Protocol;
+import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
-import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
+import net.neto_framework.server.event.events.ServerInvalidPacket;
+import net.neto_framework.server.event.events.ServerPacketException;
 import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
@@ -68,32 +74,107 @@ public class ServerConnectionHandler extends Thread {
                     this.server.getEventHandler().callEvent(event);
                 }
             } else if (this.server.getProtocol() == Protocol.UDP) {
-                byte[] buffer = new byte[Connection.MAGIC_STRING
-                        .getBytes().length];
-                DatagramPacket packet = new DatagramPacket(buffer,
-                        buffer.length);
-
+                byte[] data = new byte[65508];
+                DatagramPacket dataPacket = new DatagramPacket(data,
+                        data.length);
+                
                 try {
-                    this.server.getUdpSocket().receive(packet);
+                    System.out.println("Server: Receive 1");
+                    this.server.getUdpSocket().receive(dataPacket);
+                    System.out.println("Server: Receive 2");    
+                    
+                    ByteArrayInputStream inputStream =
+                            new ByteArrayInputStream(data);
 
-                    if (new String(packet.getData())
-                            .equals(Connection.MAGIC_STRING)) {
-                        this.server.getConnectionManager().addConnection(
-                                this.server, packet.getAddress(),
-                                packet.getPort());
+                    byte[] stringLength = new byte[4];
+                    inputStream.read(stringLength);
+
+                    byte[] string = new byte[ByteBuffer.wrap(stringLength).
+                            getInt()];
+                    inputStream.read(string);
+                    String uuid = new String(string).trim();
+
+                    if(uuid.equals(Connection.MAGIC_STRING)) {
+                        System.out.println("Server: New connection.");
+                        UUID newUuid = this.server.getConnectionManager().
+                                addConnection(this.server,
+                                        dataPacket.getAddress(), 
+                                        dataPacket.getPort());
+                        
+                        this.server.getConnectionManager().
+                                getConnection(newUuid).getConnection().
+                                sendString(newUuid.toString());
+                        byte[] sendResponseData = this.server.
+                                getConnectionManager().getConnection(newUuid).
+                                getConnection().getUdpDataOutputStream().
+                                toByteArray();
+                        
+                        DatagramPacket sendResponsePacket = new DatagramPacket(
+                                sendResponseData, sendResponseData.length,
+                                dataPacket.getAddress(), dataPacket.getPort());
+                        
+                        this.server.getUdpSocket().send(sendResponsePacket);
                     } else {
-                        ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
-                                this.server, packet.getAddress(),
-                                packet.getData());
-                        this.server.getEventHandler().callEvent(event);
+                        UUID clientId = UUID.fromString(uuid);
+                        if(this.server.getConnectionManager().
+                                hasConnection(clientId)) {
+                            byte[] packetIdData = new byte[4];
+                            inputStream.read(packetIdData);
+                            int packetId = ByteBuffer.wrap(packetIdData).
+                            getInt();
+
+                            ClientConnection client = this.server.
+                                    getConnectionManager().
+                                    getConnection(clientId);
+
+                            if(this.server.getPacketManager().
+                                    hasPacket(packetId)) {
+                                client.getConnection().
+                                        setUdpDataInputStream(inputStream);
+                                this.server.getPacketManager().receive(
+                                        packetId, client.getConnection(),
+                                        PacketReceiver.SERVER);
+                            } else {
+                                PacketException exception = 
+                                        new PacketException(
+                                                "Invalid packet received.");
+                                this.server.getEventHandler().callEvent(
+                                        new ServerInvalidPacket(this.server,
+                                                packetId, exception));
+                            }
+                        } else {
+                            ConnectionException exception = 
+                                    new ConnectionException(
+                                            "Unreadable UDP Packet received.",
+                                            new Exception());
+                            ServerFailedToAcceptConnection event = 
+                                    new ServerFailedToAcceptConnection(
+                                            this.server, 
+                                            this.server.getProtocol(),
+                                            exception);
+                            this.server.getEventHandler().callEvent(event);
+                        }
                     }
                 } catch (IOException e) {
                     ConnectionException exception = new ConnectionException(
-                            "I/O Error when trying to read a UDP handshake packet.",
-                            e);
-                    ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
-                            this.server, this.server.getProtocol(), exception);
+                            "I/O Error when trying to read a UDP packet.", e);
+                    ServerFailedToAcceptConnection event = 
+                            new ServerFailedToAcceptConnection(this.server,
+                                    this.server.getProtocol(), exception);
                     this.server.getEventHandler().callEvent(event);
+                    return;
+                } catch (InstantiationException e) {
+                    PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.server.getEventHandler().callEvent(
+                                new ServerPacketException(this.server,
+                                        exception));
+                } catch (IllegalAccessException e) {
+                    PacketException exception = new PacketException(
+                                "Failed to create instance of packet.", e);
+                        this.server.getEventHandler().callEvent(
+                                new ServerPacketException(this.server,
+                                        exception));
                 }
             }
         }
