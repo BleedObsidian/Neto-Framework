@@ -1,0 +1,13 @@
+net.neto_framework
+net.neto_framework.address
+net.neto_framework.address.exceptions
+net.neto_framework.client
+net.neto_framework.client.event
+net.neto_framework.client.event.events
+net.neto_framework.client.exceptions
+net.neto_framework.event
+net.neto_framework.exceptions
+net.neto_framework.server
+net.neto_framework.server.event
+net.neto_framework.server.event.events
+net.neto_framework.server.exceptions
