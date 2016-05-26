@@ -20,6 +20,7 @@ package net.neto_framework.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.UUID;
 
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
@@ -41,9 +42,9 @@ import net.neto_framework.server.exceptions.ConnectionException;
 public class ClientConnection implements Runnable {
     
     /**
-     * ID of ClientConnection.
+     * Unique ID of ClientConnection.
      */
-    private final int id;
+    private final UUID uuid;
 
     /**
      * Server.
@@ -60,14 +61,14 @@ public class ClientConnection implements Runnable {
      * 
      * @param server
      *            Server.
-     * @param id
-     *            Client ID.
+     * @param uuid
+     *            Unique ID of client.
      * @param connection
      *            Connection.
      */
-    public ClientConnection(Server server, int id, Connection connection) {
+    public ClientConnection(Server server, UUID uuid, Connection connection) {
         this.server = server;
-        this.id = id;
+        this.uuid = uuid;
         this.connection = connection;
     }
 
@@ -184,14 +185,14 @@ public class ClientConnection implements Runnable {
     /**
      * @return Client ID.
      */
-    public synchronized int getClientID() {
-        return this.id;
+    public UUID getClientID() {
+        return this.uuid;
     }
 
     /**
      * @return Connection.
      */
-    public synchronized Connection getConnection() {
+    public Connection getConnection() {
         return this.connection;
     }
 }
