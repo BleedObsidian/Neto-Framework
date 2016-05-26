@@ -32,11 +32,12 @@ import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
-import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientFailedToConnectToServer;
 import net.neto_framework.client.event.events.ClientServerConnect;
 import net.neto_framework.client.event.events.ClientServerDisconnect;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
+import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -93,12 +94,9 @@ public class Client {
     /**
      * New client that connects to a given server address and protocol.
      * 
-     * @param packetManager
-     *            PacketManager.
-     * @param address
-     *            Server SocketAddress.
-     * @param protocol
-     *            Protocol.
+     * @param packetManager PacketManager.
+     * @param address Server SocketAddress.
+     * @param protocol Protocol.
      */
     public Client(PacketManager packetManager, SocketAddress address,
             Protocol protocol) {
@@ -111,8 +109,7 @@ public class Client {
     /**
      * Attempt to connect to server.
      * 
-     * @throws ClientConnectException
-     *             If fails to connect to server.
+     * @throws ClientConnectException If fails to connect to server.
      */
     public void connect() throws ClientConnectException {
         if (!this.isConnected) {
@@ -141,9 +138,11 @@ public class Client {
                         this.isConnected = true;
                         (new Thread(this.connection)).start();
                     } else {
-                        ClientReceiveInvalidHandshake event = new ClientReceiveInvalidHandshake(
-                                this, this.tcpSocket.getInetAddress(),
-                                magicStringBuffer);
+                        ClientFailedToConnectToServer event = 
+                                new ClientFailedToConnectToServer(this,
+                                        new ConnectionException(
+                                                "Received invalid handshake"
+                                                        + " from server."));
                         this.eventHandler.callEvent(event);
                         throw new ClientConnectException(
                                 "Received invalid handshake from server",
@@ -176,15 +175,11 @@ public class Client {
                     
                     this.udpSocket.send(handshakePacket);
                     
-                    System.out.println("Client: Sent handshake.");
-                    
                     byte[] data = new byte[65508];
                     DatagramPacket receiveHandshakePacket = new DatagramPacket(
                             data, data.length);
                     
-                    System.out.println("Client: Receive 1");
                     this.udpSocket.receive(receiveHandshakePacket);
-                    System.out.println("Client: Receive 2");
                     
                     ByteArrayInputStream inputStream = 
                             new ByteArrayInputStream(data);
@@ -219,8 +214,7 @@ public class Client {
     /**
      * Attempt to close connection.
      * 
-     * @throws ClientConnectException
-     *             If fails to close connection.
+     * @throws ClientConnectException If fails to close connection.
      */
     public void disconnect() throws ClientConnectException {
         if (this.isConnected) {

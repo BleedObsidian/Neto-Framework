@@ -38,10 +38,8 @@ public class ClientServerConnect extends ClientEvent {
     /**
      * New ClientServerConnect event.
      * 
-     * @param client
-     *            Client.
-     * @param connection
-     *            New Connection.
+     * @param client Client.
+     * @param connection New Connection.
      */
     public ClientServerConnect(Client client, ServerConnection connection) {
         super(client, ClientEvents.CLIENT_SERVER_CONNECT);

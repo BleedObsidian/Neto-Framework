@@ -18,58 +18,41 @@
 
 package net.neto_framework.client.event.events;
 
-import java.net.InetAddress;
-
 import net.neto_framework.client.Client;
 import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEvents;
+import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
- * An event that is fired when the client receives an invalid handshake packet.
+ * Fired when a new client tried to connect but failed. Reasons can include
+ * I/O Exceptions or Invalid Handshakes.
  * 
  * @author BleedObsidian (Jesse Precott)
  */
-public class ClientReceiveInvalidHandshake extends ClientEvent {
+public class ClientFailedToConnectToServer extends ClientEvent {
     
     /**
-     * InetAddress of InvalidHandshake.
+     * ConnectionException thrown.
      */
-    private final InetAddress address;
-    
-    /**
-     * Data within invalid handshake.
-     */
-    private final byte[] data;
+    private final ConnectionException exception;
 
     /**
-     * New ClientReceiveInvalidHandshake event.
+     * New ClientFailedToConnectToServer event.
      * 
-     * @param client
-     *            Client.
-     * @param address
-     *            Address of handshake origin.
-     * @param data
-     *            Data received instead of magic number.
+     * @param client Client.
+     * @param exception Exception thrown.
      */
-    public ClientReceiveInvalidHandshake(Client client, InetAddress address,
-            byte[] data) {
-        super(client, ClientEvents.CLIENT_RECEIVE_INVALID_HANDSHAKE);
+    public ClientFailedToConnectToServer(Client client, 
+            ConnectionException exception) {
+        super(client, ClientEvents.CLIENT_FAILED_TO_CONNECT_TO_SERVER);
 
-        this.address = address;
-        this.data = data;
+        this.exception = exception;
     }
 
     /**
-     * @return Address of invalid handshake packet origin.
+     * @return ConnectionException thrown.
      */
-    public InetAddress getAddress() {
-        return this.address;
-    }
-
-    /**
-     * @return Invalid data received in handshake packet.
-     */
-    public byte[] getData() {
-        return this.data;
+    public ConnectionException getException() {
+        return this.exception;
     }
 }

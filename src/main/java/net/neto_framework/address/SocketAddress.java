@@ -44,10 +44,8 @@ public class SocketAddress {
     /**
      * New SocketAddress with localhost and given port.
      * 
-     * @param port
-     *            Port number. (Max: 65535)
-     * @throws SocketAddressException
-     *             If fails to create SocketAddress.
+     * @param port Port number. (Max: 65535)
+     * @throws SocketAddressException If fails to create SocketAddress.
      */
     public SocketAddress(int port) throws SocketAddressException {
         try {
@@ -67,12 +65,9 @@ public class SocketAddress {
     /**
      * New SocketAddress with given host name and port.
      * 
-     * @param host
-     *            Host name. (Can be an IP address or machine name)
-     * @param port
-     *            Port number. (Max: 65535)
-     * @throws SocketAddressException
-     *             If fails to get the address of given host.
+     * @param host Host name. (Can be an IP address or machine name)
+     * @param port Port number. (Max: 65535)
+     * @throws SocketAddressException If fails to get the address of given host.
      */
     public SocketAddress(String host, int port) throws SocketAddressException {
         try {
@@ -93,12 +88,9 @@ public class SocketAddress {
     /**
      * New SocketAddress with given host name and port.
      * 
-     * @param address
-     *            Raw IP address in network byte order .
-     * @param port
-     *            Port number. (Max: 65535)
-     * @throws SocketAddressException
-     *             If fails to get the address of given host.
+     * @param address Raw IP address in network byte order .
+     * @param port Port number. (Max: 65535)
+     * @throws SocketAddressException If fails to get the address of given host.
      */
     public SocketAddress(byte[] address, int port)
             throws SocketAddressException {

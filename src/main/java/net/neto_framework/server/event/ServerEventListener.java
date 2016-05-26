@@ -19,10 +19,9 @@
 package net.neto_framework.server.event;
 
 import net.neto_framework.server.event.events.ServerClientConnect;
-import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerClientFailedToConnect;
 import net.neto_framework.server.event.events.ServerInvalidPacket;
 import net.neto_framework.server.event.events.ServerPacketException;
-import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.event.events.ServerStart;
 import net.neto_framework.server.event.events.ServerStop;
 
@@ -33,33 +32,22 @@ import net.neto_framework.server.event.events.ServerStop;
  * @author BleedObsidian (Jesse Prescott)
  */
 public abstract class ServerEventListener {
+    
     /**
-     * Fired when the server fails to accept a TCP or UDP connection.
+     * Fired when a new client tried to connect but failed. Reasons can include
+     * I/O Exceptions or Invalid Handshakes.
      * 
-     * @param event
-     *            ServerFaildToAcceptConnection event.
+     * @param event ServerClientFailedToConnect
      */
-    public void onServerFailedToAcceptConnection(
-            ServerFailedToAcceptConnection event) {
+    public void onServerClientFailedToConnect(ServerClientFailedToConnect
+            event){
         
-    }
-
-    /**
-     * Fired when the server received invalid data in the handshake packet.
-     * 
-     * @param event
-     *            ServerReceiveInvalidHandshake event.
-     */
-    public void onServerReceiveInvalidHandshake(
-            ServerReceiveInvalidHandshake event) {
-
     }
 
     /**
      * Fired when a new client successfully connects to the server.
      * 
-     * @param event
-     *            ServerClientConnect.
+     * @param event ServerClientConnect.
      */
     public void onServerClientConnect(ServerClientConnect event) {
 
@@ -68,8 +56,7 @@ public abstract class ServerEventListener {
     /**
      * Fired when the server starts.
      * 
-     * @param event
-     *            ServerStart event.
+     * @param event ServerStart event.
      */
     public void onServerStart(ServerStart event) {
 
@@ -78,8 +65,7 @@ public abstract class ServerEventListener {
     /**
      * Fired when the server stops.
      * 
-     * @param event
-     *            ServerStop event.
+     * @param event ServerStop event.
      */
     public void onServerStop(ServerStop event) {
 
@@ -88,8 +74,7 @@ public abstract class ServerEventListener {
     /**
      * Fired when the server receives an invalid packet id or packet.
      * 
-     * @param event
-     *            ServerInvalidPacket event.
+     * @param event ServerInvalidPacket event.
      */
     public void onServerInvalidPacket(ServerInvalidPacket event) {
 
@@ -98,8 +83,7 @@ public abstract class ServerEventListener {
     /**
      * Fired when the server has a problem receiving or sending a packet.
      * 
-     * @param event
-     *            ServerPacketException.
+     * @param event ServerPacketException.
      */
     public void onServerPacketException(ServerPacketException event) {
 

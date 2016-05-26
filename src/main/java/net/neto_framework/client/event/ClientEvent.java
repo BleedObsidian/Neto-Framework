@@ -40,10 +40,8 @@ public class ClientEvent {
     /**
      * New ClientEvent.
      * 
-     * @param client
-     *            Client.
-     * @param event
-     *            ClientEvents.
+     * @param client Client.
+     * @param event ClientEvents.
      */
     public ClientEvent(Client client, ClientEvents event) {
         this.client = client;

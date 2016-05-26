@@ -101,14 +101,10 @@ public class Server {
     /**
      * New server that binds to given address and uses a given protocol.
      * 
-     * @param packetManager
-     *            PacketManager.
-     * @param address
-     *            SocketAddress for server to bind to.
-     * @param protocol
-     *            Protocol for server to use.
-     * @param backlog
-     *            Maximum amount of connections to queue for tcp.
+     * @param packetManager PacketManager.
+     * @param address SocketAddress for server to bind to.
+     * @param protocol Protocol for server to use.
+     * @param backlog Maximum amount of connections to queue for TCP.
      */
     public Server(PacketManager packetManager, SocketAddress address,
             Protocol protocol, int backlog) {
@@ -126,12 +122,9 @@ public class Server {
     /**
      * New server that binds to given address and uses a given protocol.
      * 
-     * @param packetManager
-     *            PacketManager.
-     * @param address
-     *            SocketAddress for server to bind to.
-     * @param protocol
-     *            Protocol for server to use.
+     * @param packetManager PacketManager.
+     * @param address SocketAddress for server to bind to.
+     * @param protocol Protocol for server to use.
      */
     public Server(PacketManager packetManager, SocketAddress address,
             Protocol protocol) {
@@ -149,10 +142,8 @@ public class Server {
     /**
      * New server that binds to given address and uses TCP.
      * 
-     * @param packetManager
-     *            PacketManager.
-     * @param address
-     *            SocketAddress for server to bind to.
+     * @param packetManager PacketManager.
+     * @param address SocketAddress for server to bind to.
      */
     public Server(PacketManager packetManager, SocketAddress address) {
         this.packetManager = packetManager;
@@ -169,8 +160,7 @@ public class Server {
     /**
      * New server that is not bound to anything.
      * 
-     * @param packetManager
-     *            PacketManager.
+     * @param packetManager PacketManager.
      */
     public Server(PacketManager packetManager) {
         this.packetManager = packetManager;
@@ -187,8 +177,7 @@ public class Server {
     /**
      * Start accepting and listening for incoming connections.
      * 
-     * @throws ServerException
-     *             If fails to start server.
+     * @throws ServerException If fails to start server.
      */
     public void start() throws ServerException {
         if (!this.isRunning) {
@@ -225,8 +214,7 @@ public class Server {
     /**
      * Stop accepting and listening for incoming connections.
      * 
-     * @throws ServerException
-     *             If fails to stop server.
+     * @throws ServerException If fails to stop server.
      */
     public void stop() throws ServerException {
         if (this.isRunning) {

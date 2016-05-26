@@ -29,7 +29,7 @@ import net.neto_framework.PacketReceiver;
 
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
-import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerClientFailedToConnect;
 import net.neto_framework.server.event.events.ServerInvalidPacket;
 import net.neto_framework.server.event.events.ServerPacketException;
 import net.neto_framework.server.exceptions.ConnectionException;
@@ -50,8 +50,7 @@ public class ServerConnectionHandler extends Thread {
     /**
      * New ServerConnectionHandler.
      * 
-     * @param server
-     *            Server that is using this ServerConnectionHandler.
+     * @param server Server that is using this ServerConnectionHandler.
      */
     public ServerConnectionHandler(Server server) {
         this.server = server;
@@ -66,11 +65,11 @@ public class ServerConnectionHandler extends Thread {
                     this.server.getConnectionManager().addConnection(
                             this.server, socket);
                 } catch (IOException e) {
-                    ConnectionException exception = new ConnectionException(
-                            "I/O Error when trying to accept a TCP socket connection.",
-                            e);
-                    ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
-                            this.server, this.server.getProtocol(), exception);
+                    ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
+                                    new ConnectionException(
+                                            "I/O Error when accepting a TCP" +
+                                                    "connection.", e));
                     this.server.getEventHandler().callEvent(event);
                 }
             } else if (this.server.getProtocol() == Protocol.UDP) {
@@ -79,9 +78,7 @@ public class ServerConnectionHandler extends Thread {
                         data.length);
                 
                 try {
-                    System.out.println("Server: Receive 1");
                     this.server.getUdpSocket().receive(dataPacket);
-                    System.out.println("Server: Receive 2");    
                     
                     ByteArrayInputStream inputStream =
                             new ByteArrayInputStream(data);
@@ -95,19 +92,15 @@ public class ServerConnectionHandler extends Thread {
                     String uuid = new String(string).trim();
 
                     if(uuid.equals(Connection.MAGIC_STRING)) {
-                        System.out.println("Server: New connection.");
-                        UUID newUuid = this.server.getConnectionManager().
-                                addConnection(this.server,
+                        UUID newUuid = this.server.getConnectionManager().addClientConnection(this.server,
                                         dataPacket.getAddress(), 
                                         dataPacket.getPort());
                         
-                        this.server.getConnectionManager().
-                                getConnection(newUuid).getConnection().
+                        this.server.getConnectionManager().getClientConnection(newUuid).getConnection().
                                 sendString(newUuid.toString());
                         byte[] sendResponseData = this.server.
-                                getConnectionManager().getConnection(newUuid).
-                                getConnection().getUdpDataOutputStream().
-                                toByteArray();
+                                getConnectionManager().getClientConnection(newUuid).
+                                getConnection().getUdpData();
                         
                         DatagramPacket sendResponsePacket = new DatagramPacket(
                                 sendResponseData, sendResponseData.length,
@@ -116,16 +109,14 @@ public class ServerConnectionHandler extends Thread {
                         this.server.getUdpSocket().send(sendResponsePacket);
                     } else {
                         UUID clientId = UUID.fromString(uuid);
-                        if(this.server.getConnectionManager().
-                                hasConnection(clientId)) {
+                        if(this.server.getConnectionManager().hasClientConnection(clientId)) {
                             byte[] packetIdData = new byte[4];
                             inputStream.read(packetIdData);
                             int packetId = ByteBuffer.wrap(packetIdData).
                             getInt();
 
                             ClientConnection client = this.server.
-                                    getConnectionManager().
-                                    getConnection(clientId);
+                                    getConnectionManager().getClientConnection(clientId);
 
                             if(this.server.getPacketManager().
                                     hasPacket(packetId)) {
@@ -143,24 +134,20 @@ public class ServerConnectionHandler extends Thread {
                                                 packetId, exception));
                             }
                         } else {
-                            ConnectionException exception = 
+                            ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
                                     new ConnectionException(
-                                            "Unreadable UDP Packet received.",
-                                            new Exception());
-                            ServerFailedToAcceptConnection event = 
-                                    new ServerFailedToAcceptConnection(
-                                            this.server, 
-                                            this.server.getProtocol(),
-                                            exception);
+                                            "Unreadable UDP packet " +
+                                                    "received."));
                             this.server.getEventHandler().callEvent(event);
                         }
                     }
                 } catch (IOException e) {
-                    ConnectionException exception = new ConnectionException(
-                            "I/O Error when trying to read a UDP packet.", e);
-                    ServerFailedToAcceptConnection event = 
-                            new ServerFailedToAcceptConnection(this.server,
-                                    this.server.getProtocol(), exception);
+                    ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
+                                    new ConnectionException(
+                                            "I/O Error when reading UDP " +
+                                                    "packet."));
                     this.server.getEventHandler().callEvent(event);
                     return;
                 } catch (InstantiationException e) {

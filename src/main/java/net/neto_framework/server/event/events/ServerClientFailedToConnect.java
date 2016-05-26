@@ -18,24 +18,18 @@
 
 package net.neto_framework.server.event.events;
 
-import net.neto_framework.Protocol;
 import net.neto_framework.server.Server;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEvents;
 import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
- * An event that is fired when the server fails to accept a TCP or UDP
- * connection.
+ * Fired when a new client tried to connect but failed. Reasons can include
+ * I/O Exceptions or Invalid Handshakes.
  * 
  * @author BleedObsidian (Jesse Precott)
  */
-public class ServerFailedToAcceptConnection extends ServerEvent {
-    
-    /**
-     * Protocol used.
-     */
-    private final Protocol protocol;
+public class ServerClientFailedToConnect extends ServerEvent {
     
     /**
      * ConnectionException thrown.
@@ -43,28 +37,18 @@ public class ServerFailedToAcceptConnection extends ServerEvent {
     private final ConnectionException exception;
 
     /**
-     * New ServerFailedToAcceptConnection event.
+     * New ServerClientFailedToConnect event.
      * 
      * @param server
      *            Server of origin.
-     * @param protocol
-     *            Protocol used.
      * @param exception
      *            Exception thrown.
      */
-    public ServerFailedToAcceptConnection(Server server, Protocol protocol,
+    public ServerClientFailedToConnect(Server server, 
             ConnectionException exception) {
-        super(server, ServerEvents.SERVER_FAILED_TO_ACCEPT_CONNECTION);
+        super(server, ServerEvents.SERVER_CLIENT_FAILED_TO_CONNECT);
 
-        this.protocol = protocol;
         this.exception = exception;
-    }
-
-    /**
-     * @return Protocol used when error occurred.
-     */
-    public Protocol getProtocol() {
-        return this.protocol;
     }
 
     /**

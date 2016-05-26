@@ -21,15 +21,13 @@ package net.neto_framework.server;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 import net.neto_framework.Connection;
 
 /**
- * A manager to take care of all connections via tcp/udp.
+ * A manager to take care of all client connections.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
@@ -43,10 +41,8 @@ public class ServerConnectionManager {
     /**
      * Add given TCP connection into pool.
      * 
-     * @param server
-     *            Server.
-     * @param socket
-     *            Socket of new TCP connection.
+     * @param server Server.
+     * @param socket Socket of new TCP connection.
      * @return Unique ID.
      */
     public UUID addConnection(Server server, Socket socket) {
@@ -62,15 +58,12 @@ public class ServerConnectionManager {
     /**
      * Add given UDP connection into pool.
      * 
-     * @param server
-     *            Server.
-     * @param address
-     *            InetAddress of new UDP connection.
-     * @param port
-     *            Port number of new UDP connection.
+     * @param server Server.
+     * @param address InetAddress of new UDP connection.
+     * @param port Port number of new UDP connection.
      * @return Unique ID.
      */
-    public UUID addConnection(Server server, InetAddress address, int port) {
+    public UUID addClientConnection(Server server, InetAddress address, int port) {
         UUID uuid = UUID.randomUUID();
         ClientConnection connection = new ClientConnection(server, uuid,
                 new Connection(server.getUdpSocket(), address, port));
@@ -83,39 +76,36 @@ public class ServerConnectionManager {
     /**
      * Remove connection.
      * 
-     * @param uuid
-     *            Unique ID of connection.
+     * @param uuid Unique ID of connection.
      */
-    public void removeConnection(UUID uuid) {
+    public void removeClientConnection(UUID uuid) {
         this.connections.remove(uuid);
     }
 
     /**
      * If connection pool contains a connection with the given ID.
      * 
-     * @param uuid
-     *            Unique ID of connection.
+     * @param uuid Unique ID of connection.
      * @return If connection exists.
      */
-    public boolean hasConnection(UUID uuid) {
+    public boolean hasClientConnection(UUID uuid) {
         return this.connections.containsKey(uuid);
     }
 
     /**
      * Get Connection handle for connection with given ID.
      * 
-     * @param uuid
-     *            Unique ID of connection.
+     * @param uuid Unique ID of connection.
      * @return Connection.
      */
-    public ClientConnection getConnection(UUID uuid) {
+    public ClientConnection getClientConnection(UUID uuid) {
         return this.connections.get(uuid);
     }
     
     /**
      * @return List<ClientConnection>.
      */
-    public ArrayList<ClientConnection> getConnections() {
+    public ArrayList<ClientConnection> getClientConnections() {
         ArrayList<ClientConnection> values = new ArrayList<ClientConnection>();
         
         for(ClientConnection connection : this.connections.values()) {

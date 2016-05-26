@@ -38,10 +38,8 @@ public class ClientServerDisconnect extends ClientEvent {
     /**
      * New ClientServerDisconnect event.
      * 
-     * @param client
-     *            Client.
-     * @param connection
-     *            Old Connection.
+     * @param client Client.
+     * @param connection Old Connection.
      */
     public ClientServerDisconnect(Client client, ServerConnection connection) {
         super(client, ClientEvents.CLIENT_SERVER_DISCONNECT);

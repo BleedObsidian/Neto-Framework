@@ -40,10 +40,8 @@ public class ServerEvent {
     /**
      * New ServerEvent.
      * 
-     * @param server
-     *            Server.
-     * @param event
-     *            ServerEvents.
+     * @param server Server.
+     * @param event ServerEvents.
      */
     public ServerEvent(Server server, ServerEvents event) {
         this.server = server;

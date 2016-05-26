@@ -33,10 +33,8 @@ public class PacketException extends Exception {
     /**
      * New PacketException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
+     * @param message Reason for exception.
+     * @param exception Cause exception.
      */
     public PacketException(String message, Exception exception) {
         super(message, exception);
@@ -45,8 +43,7 @@ public class PacketException extends Exception {
     /**
      * New PacketException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
+     * @param message Reason for exception.
      */
     public PacketException(String message) {
         super(message);

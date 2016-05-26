@@ -33,10 +33,8 @@ public class ClientConnectException extends Exception {
     /**
      * New ClientConnectException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
+     * @param message Reason for exception.
+     * @param exception Cause exception.
      */
     public ClientConnectException(String message, Exception exception) {
         super(message, exception);

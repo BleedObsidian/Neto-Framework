@@ -33,10 +33,8 @@ public class ServerException extends Exception {
     /**
      * New ServerException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
+     * @param message Reason for exception.
+     * @param exception Cause exception.
      */
     public ServerException(String message, Exception exception) {
         super(message, exception);

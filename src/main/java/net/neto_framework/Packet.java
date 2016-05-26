@@ -29,26 +29,22 @@ public interface Packet {
     /**
      * Send packet to connection.
      * 
-     * @param connection
-     *            Connection.
+     * @param connection Connection.
      */
     public void send(Connection connection) throws IOException;
 
     /**
      * Receive packet from connection.
      * 
-     * @param connection
-     *            Connection.
+     * @param connection Connection.
      */
     public void receive(Connection connection) throws IOException;
 
     /**
      * Fired when this packet is received.
      * 
-     * @param packet
-     *            Packet.
-     * @param receiver
-     *            PacketReceiver.
+     * @param packet Packet.
+     * @param receiver PacketReceiver.
      */
     public void onReceive(Packet packet, PacketReceiver receiver);
 

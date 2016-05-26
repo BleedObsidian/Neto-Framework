@@ -31,8 +31,7 @@ public class ServerStop extends ServerEvent {
     /**
      * New ServerStop event.
      * 
-     * @param server
-     *            Server.
+     * @param server Server.
      */
     public ServerStop(Server server) {
         super(server, ServerEvents.SERVER_STOP);

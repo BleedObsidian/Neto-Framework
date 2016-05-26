@@ -21,7 +21,6 @@ package net.neto_framework;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -32,13 +31,13 @@ import java.nio.ByteBuffer;
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
-public class Connection {
+public final class Connection {
     
     /**
      * A magic string that should be within a handshake packet to verify the
      * connection is also using the Neto-Framework.
      */
-    public static String MAGIC_STRING = "1293";
+    public static String MAGIC_STRING = "SDLJhs34jlDdj89";
     
     /**
      * Protocol that connection is using.
@@ -78,8 +77,7 @@ public class Connection {
     /**
      * New TCP Connection.
      * 
-     * @param socket
-     *            TCP Socket.
+     * @param socket TCP Socket.
      */
     public Connection(Socket socket) {
         this.protocol = Protocol.TCP;
@@ -94,12 +92,9 @@ public class Connection {
     /**
      * New UDP Connection.
      * 
-     * @param udpSocket 
-     *            UDP Socket.
-     * @param address
-     *            UDP InetAddress.
-     * @param port
-     *            Port number.
+     * @param udpSocket UDP Socket.
+     * @param address UDP InetAddress.
+     * @param port Port number.
      */
     public Connection(DatagramSocket udpSocket, InetAddress address, int port) {
         this.protocol = Protocol.UDP;
@@ -123,10 +118,8 @@ public class Connection {
     /**
      * Send byte array to connection.
      * 
-     * @param data
-     *            Byte array data.
-     * @throws IOException
-     *             If failed to send
+     * @param data Byte array data.
+     * @throws IOException If failed to send
      */
     public void send(byte[] data) throws IOException {
         if (this.protocol == Protocol.TCP) {
@@ -139,11 +132,9 @@ public class Connection {
     /**
      * Receive byte array from connection.
      * 
-     * @param buffer
-     *            Buffer.
+     * @param buffer Buffer.
      * @return Byte array data.
-     * @throws IOException
-     *             If failed to read.
+     * @throws IOException If failed to read.
      */
     public byte[] receive(byte[] buffer) throws IOException {
         if (this.protocol == Protocol.TCP) {
@@ -158,10 +149,8 @@ public class Connection {
     /**
      * Send short to connection.
      * 
-     * @param data
-     *            Short.
-     * @throws IOException
-     *             If fails to send short.
+     * @param data Short.
+     * @throws IOException If fails to send short.
      */
     public void sendShort(short data) throws IOException {
         this.send(ByteBuffer.allocate(2).putShort(data).array());
@@ -171,8 +160,7 @@ public class Connection {
      * Receive short from connection.
      * 
      * @return Short.
-     * @throws IOException
-     *             If fails to receive short.
+     * @throws IOException If fails to receive short.
      */
     public short receiveShort() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[2])).getShort();
@@ -181,10 +169,8 @@ public class Connection {
     /**
      * Send integer to connection.
      * 
-     * @param data
-     *            Integer.
-     * @throws IOException
-     *             If fails to send integer.
+     * @param data Integer.
+     * @throws IOException If fails to send integer.
      */
     public void sendInteger(int data) throws IOException {
         this.send(ByteBuffer.allocate(4).putInt(data).array());
@@ -194,8 +180,7 @@ public class Connection {
      * Receive integer from connection.
      * 
      * @return Integer.
-     * @throws IOException
-     *             If fails to receive integer.
+     * @throws IOException If fails to receive integer.
      */
     public int receiveInteger() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[4])).getInt();
@@ -204,10 +189,8 @@ public class Connection {
     /**
      * Send long to connection.
      * 
-     * @param data
-     *            Long.
-     * @throws IOException
-     *             If fails to send long.
+     * @param data Long.
+     * @throws IOException If fails to send long.
      */
     public void sendLong(long data) throws IOException {
         this.send(ByteBuffer.allocate(8).putLong(data).array());
@@ -217,8 +200,7 @@ public class Connection {
      * Receive long from connection.
      * 
      * @return Long.
-     * @throws IOException
-     *             If fails to receive long.
+     * @throws IOException If fails to receive long.
      */
     public long receiveLong() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[8])).getLong();
@@ -227,10 +209,8 @@ public class Connection {
     /**
      * Send float to connection.
      * 
-     * @param data
-     *            Float.
-     * @throws IOException
-     *             If fails to send float.
+     * @param data Float.
+     * @throws IOException If fails to send float.
      */
     public void sendFloat(float data) throws IOException {
         this.send(ByteBuffer.allocate(4).putFloat(data).array());
@@ -240,8 +220,7 @@ public class Connection {
      * Receive float from connection.
      * 
      * @return Float.
-     * @throws IOException
-     *             If fails to receive float.
+     * @throws IOException If fails to receive float.
      */
     public float receiveFloat() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[4])).getFloat();
@@ -250,10 +229,8 @@ public class Connection {
     /**
      * Send double to connection.
      * 
-     * @param data
-     *            Double.
-     * @throws IOException
-     *             If fails to send double.
+     * @param data Double.
+     * @throws IOException If fails to send double.
      */
     public void sendDouble(double data) throws IOException {
         this.send(ByteBuffer.allocate(8).putDouble(data).array());
@@ -263,8 +240,7 @@ public class Connection {
      * Receive double from connection.
      * 
      * @return Double.
-     * @throws IOException
-     *             If fails to receive double.
+     * @throws IOException If fails to receive double.
      */
     public double receiveDouble() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[8])).getDouble();
@@ -273,10 +249,8 @@ public class Connection {
     /**
      * Send boolean to connection.
      * 
-     * @param data
-     *            Boolean.
-     * @throws IOException
-     *             If failes to send boolean.
+     * @param data Boolean.
+     * @throws IOException If fails to send boolean.
      */
     public void sendBoolean(boolean data) throws IOException {
         this.send(new byte[] { (byte) (data ? 0x01 : 0x00) });
@@ -286,8 +260,7 @@ public class Connection {
      * Receive boolean from connection.
      * 
      * @return Boolean.
-     * @throws IOException
-     *             If fails to receive boolean.
+     * @throws IOException If fails to receive boolean.
      */
     public boolean receiveBoolean() throws IOException {
         return (this.receive(new byte[1])[0] != 0);
@@ -296,10 +269,8 @@ public class Connection {
     /**
      * Send char to connection.
      * 
-     * @param data
-     *            Char.
-     * @throws IOException
-     *             If fails to send char.
+     * @param data Char.
+     * @throws IOException If fails to send char.
      */
     public void sendChar(char data) throws IOException {
         this.send(ByteBuffer.allocate(2).putChar(data).array());
@@ -309,8 +280,7 @@ public class Connection {
      * Receive char from connection.
      * 
      * @return Char.
-     * @throws IOException
-     *             If fails to receive char.
+     * @throws IOException If fails to receive char.
      */
     public char receiveChar() throws IOException {
         return ByteBuffer.wrap(this.receive(new byte[2])).getChar();
@@ -319,10 +289,8 @@ public class Connection {
     /**
      * Send string to connection.
      * 
-     * @param string
-     *            String.
-     * @throws IOException
-     *             If failed to send.
+     * @param string String.
+     * @throws IOException If failed to send.
      */
     public void sendString(String string) throws IOException {
         this.sendInteger(string.getBytes().length);
@@ -333,8 +301,7 @@ public class Connection {
      * Receive string from connection.
      * 
      * @return Trimmed string.
-     * @throws IOException
-     *             If fails to receive string.
+     * @throws IOException If fails to receive string.
      */
     public String receiveString() throws IOException {
         int size = this.receiveInteger();
@@ -385,9 +352,11 @@ public class Connection {
     }
     
     /**
-     * @return ByteArrayOutputStream full of all data to send.
+     * @return Byte array full of all data to send.
      */
-    public synchronized ByteArrayOutputStream getUdpDataOutputStream() {
-        return this.udpDataOutputStream;
+    public synchronized byte[] getUdpData() {
+        byte[] data = this.udpDataOutputStream.toByteArray();
+        this.flush();
+        return data;
     }
 }

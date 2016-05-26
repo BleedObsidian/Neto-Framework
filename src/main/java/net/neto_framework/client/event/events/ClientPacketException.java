@@ -39,10 +39,8 @@ public class ClientPacketException extends ClientEvent {
     /**
      * New ServerPacketException Event.
      * 
-     * @param client
-     *            Client.
-     * @param exception
-     *            PacketException.
+     * @param client Client.
+     * @param exception PacketException.
      */
     public ClientPacketException(Client client, PacketException exception) {
         super(client, ClientEvents.CLIENT_PACKET_EXCEPTION);

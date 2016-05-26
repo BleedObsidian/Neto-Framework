@@ -31,8 +31,7 @@ public class ServerStart extends ServerEvent {
     /**
      * New ServerStart event.
      * 
-     * @param server
-     *            Server.
+     * @param server Server.
      */
     public ServerStart(Server server) {
         super(server, ServerEvents.SERVER_START);

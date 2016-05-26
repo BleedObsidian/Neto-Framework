@@ -20,7 +20,7 @@ package net.neto_framework.client.event;
 
 import net.neto_framework.client.event.events.ClientInvalidPacket;
 import net.neto_framework.client.event.events.ClientPacketException;
-import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientFailedToConnectToServer;
 import net.neto_framework.client.event.events.ClientServerConnect;
 import net.neto_framework.client.event.events.ClientServerDisconnect;
 
@@ -34,39 +34,36 @@ public abstract class ClientEventListener {
     /**
      * Fired when the client successfully connects to a server.
      * 
-     * @param event
-     *            ClientServerConnect.
+     * @param event ClientServerConnect.
      */
     public void onClientServerConnect(ClientServerConnect event) {
+
+    }
+    
+    /**
+     * Fired when the client fails to connect to the server. Reasons include
+     * I/O errors and Invalid Handshakes.
+     * 
+     * @param event ClientFailedToConnectToServer event.
+     */
+    public void onClientFailedToConnectToServer(
+            ClientFailedToConnectToServer event) {
 
     }
 
     /**
      * Fired when the client disconnects from a server.
      * 
-     * @param event
-     *            ClientServerConnect.
+     * @param event ClientServerConnect.
      */
     public void onClientServerDisconnect(ClientServerDisconnect event) {
 
     }
 
     /**
-     * Fired when the client received invalid data in the handshake packet.
-     * 
-     * @param event
-     *            ClientReceiveInvalidHandshake event.
-     */
-    public void onClientReceiveInvalidHandshake(
-            ClientReceiveInvalidHandshake event) {
-
-    }
-
-    /**
      * Fired when the client receives an invalid packet or packet id.
      * 
-     * @param event
-     *            ClientInvalidPacket.
+     * @param event ClientInvalidPacket.
      */
     public void onClientInvalidPacket(ClientInvalidPacket event) {
 
@@ -75,8 +72,7 @@ public abstract class ClientEventListener {
     /**
      * Fired when the client has a problem receiving or sending a packet.
      * 
-     * @param event
-     *            ClientPacketException.
+     * @param event ClientPacketException.
      */
     public void onClientPacketException(ClientPacketException event) {
 

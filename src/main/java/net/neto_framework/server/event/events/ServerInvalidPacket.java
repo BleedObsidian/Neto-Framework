@@ -44,12 +44,9 @@ public class ServerInvalidPacket extends ServerEvent {
     /**
      * New ServerInvalidPacket Event.
      * 
-     * @param server
-     *            Server.
-     * @param id
-     *            Received packet ID.
-     * @param exception
-     *            PacketException.
+     * @param server Server.
+     * @param id Received packet ID.
+     * @param exception PacketException.
      */
     public ServerInvalidPacket(Server server, int id, PacketException exception) {
         super(server, ServerEvents.SERVER_INVALID_PACKET);

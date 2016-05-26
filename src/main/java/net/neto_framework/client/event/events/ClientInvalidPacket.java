@@ -44,12 +44,9 @@ public class ClientInvalidPacket extends ClientEvent {
     /**
      * New ClientInvalidPacket Event.
      * 
-     * @param client
-     *            Client.
-     * @param id
-     *            Received packet ID.
-     * @param exception
-     *            PacketException.
+     * @param client Client.
+     * @param id Received packet ID.
+     * @param exception PacketException.
      */
     public ClientInvalidPacket(Client client, int id, PacketException exception) {
         super(client, ClientEvents.CLIENT_INVALID_PACKET);

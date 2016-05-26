@@ -28,10 +28,9 @@ import net.neto_framework.PacketReceiver;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.event.events.ServerClientConnect;
-import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerClientFailedToConnect;
 import net.neto_framework.server.event.events.ServerInvalidPacket;
 import net.neto_framework.server.event.events.ServerPacketException;
-import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
@@ -59,12 +58,9 @@ public class ClientConnection implements Runnable {
     /**
      * New ClientConnection.
      * 
-     * @param server
-     *            Server.
-     * @param uuid
-     *            Unique ID of client.
-     * @param connection
-     *            Connection.
+     * @param server Server.
+     * @param uuid Unique ID of client.
+     * @param connection Connection.
      */
     public ClientConnection(Server server, UUID uuid, Connection connection) {
         this.server = server;
@@ -72,30 +68,31 @@ public class ClientConnection implements Runnable {
         this.connection = connection;
     }
 
-    /**
-     * Thread run.
-     */
+    @Override
     public void run() {
-        byte[] magicStringBuffer = Connection.MAGIC_STRING.getBytes();
-
         if (this.server.getProtocol() == Protocol.TCP) {
+            byte[] magicStringBuffer = Connection.MAGIC_STRING.getBytes();
+            
             try {
                 byte[] buffer = new byte[Connection.MAGIC_STRING
                         .getBytes().length];
                 this.connection.getTCPSocket().getInputStream().read(buffer);
 
                 if (!new String(buffer).equals(Connection.MAGIC_STRING)) {
-                    ServerReceiveInvalidHandshake event = new ServerReceiveInvalidHandshake(
-                            this.server, this.connection.getAddress(), buffer);
+                    ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
+                                    new ConnectionException(
+                                            "Invalid Handshake: Wrong magic " +
+                                                    "string received."));
                     this.server.getEventHandler().callEvent(event);
                     return;
                 }
             } catch (IOException e) {
-                ConnectionException exception = new ConnectionException(
-                        "I/O Error when trying to read a TCP handshake packet.",
-                        e);
-                ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
-                        this.server, this.server.getProtocol(), exception);
+                ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
+                                    new ConnectionException(
+                                            "I/O Error when reading TCP " +
+                                                    "handshake."));
                 this.server.getEventHandler().callEvent(event);
                 return;
             }
@@ -104,11 +101,11 @@ public class ClientConnection implements Runnable {
                 this.connection.getTCPSocket().getOutputStream()
                         .write(magicStringBuffer);
             } catch (IOException e) {
-                ConnectionException exception = new ConnectionException(
-                        "I/O Error when trying to send a TCP handshake packet.",
-                        e);
-                ServerFailedToAcceptConnection event = new ServerFailedToAcceptConnection(
-                        this.server, this.server.getProtocol(), exception);
+                ServerClientFailedToConnect event = 
+                            new ServerClientFailedToConnect(this.server,
+                                    new ConnectionException(
+                                            "I/O Error when sending TCP " +
+                                                    "handshake."));
                 this.server.getEventHandler().callEvent(event);
                 return;
             }
@@ -158,10 +155,8 @@ public class ClientConnection implements Runnable {
     /**
      * Send client packet.
      * 
-     * @param packet
-     *            Packet.
-     * @throws IOException
-     *             If fails to send packet.
+     * @param packet Packet.
+     * @throws IOException If fails to send packet.
      */
     public void sendPacket(Packet packet) throws IOException {
         if(this.server.getProtocol() == Protocol.TCP) {
@@ -171,13 +166,11 @@ public class ClientConnection implements Runnable {
             this.connection.sendString(this.uuid.toString());
             this.connection.sendInteger(packet.getID());
             packet.send(this.connection);
-            byte[] data = this.connection.getUdpDataOutputStream().
-                    toByteArray();
+            byte[] data = this.connection.getUdpData();
             
             DatagramPacket dataPacket = new DatagramPacket(data, data.length,
                     this.connection.getAddress(), this.connection.getPort());
             this.server.getUdpSocket().send(dataPacket);
-            this.connection.flush();
         }
     }
 

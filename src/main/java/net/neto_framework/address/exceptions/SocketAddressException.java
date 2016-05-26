@@ -33,8 +33,7 @@ public class SocketAddressException extends Exception {
     /**
      * New SocketAddressException.
      * 
-     * @param message
-     *            Reason for exception.
+     * @param message Reason for exception.
      */
     public SocketAddressException(String message) {
         super(message);
@@ -43,10 +42,8 @@ public class SocketAddressException extends Exception {
     /**
      * New SocketAddressException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
+     * @param message Reason for exception.
+     * @param exception Cause exception.
      */
     public SocketAddressException(String message, Exception exception) {
         super(message, exception);

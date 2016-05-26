@@ -34,12 +34,19 @@ public class ConnectionException extends Exception {
     /**
      * New ConnectionException with cause exception.
      * 
-     * @param message
-     *            Reason for exception.
-     * @param exception
-     *            Cause exception.
+     * @param message Reason for exception.
+     * @param exception Cause exception.
      */
     public ConnectionException(String message, Exception exception) {
         super(message, exception);
+    }
+    
+    /**
+     * New ConnectionException.
+     * 
+     * @param message Reason for exception.
+     */
+    public ConnectionException(String message) {
+        super(message);
     }
 }

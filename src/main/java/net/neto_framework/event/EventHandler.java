@@ -24,16 +24,15 @@ import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
 import net.neto_framework.client.event.events.ClientInvalidPacket;
 import net.neto_framework.client.event.events.ClientPacketException;
-import net.neto_framework.client.event.events.ClientReceiveInvalidHandshake;
+import net.neto_framework.client.event.events.ClientFailedToConnectToServer;
 import net.neto_framework.client.event.events.ClientServerConnect;
 import net.neto_framework.client.event.events.ClientServerDisconnect;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ServerClientConnect;
-import net.neto_framework.server.event.events.ServerFailedToAcceptConnection;
+import net.neto_framework.server.event.events.ServerClientFailedToConnect;
 import net.neto_framework.server.event.events.ServerInvalidPacket;
 import net.neto_framework.server.event.events.ServerPacketException;
-import net.neto_framework.server.event.events.ServerReceiveInvalidHandshake;
 import net.neto_framework.server.event.events.ServerStart;
 import net.neto_framework.server.event.events.ServerStop;
 
@@ -57,8 +56,7 @@ public class EventHandler {
     /**
      * Register ServerEventListener.
      * 
-     * @param listener
-     *            ServerEventListener.
+     * @param listener ServerEventListener.
      */
     public void registerServerEventListener(ServerEventListener listener) {
         this.serverEventListeners.add(listener);
@@ -67,8 +65,7 @@ public class EventHandler {
     /**
      * Register ClientEventListener.
      * 
-     * @param listener
-     *            ClientEventListener.
+     * @param listener ClientEventListener.
      */
     public void registerClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.add(listener);
@@ -77,8 +74,7 @@ public class EventHandler {
     /**
      * Unregister ServerEventListener.
      * 
-     * @param listener
-     *            ServerEventListener.
+     * @param listener ServerEventListener.
      */
     public void unregisterServerEventListener(ServerEventListener listener) {
         this.serverEventListeners.remove(listener);
@@ -87,8 +83,7 @@ public class EventHandler {
     /**
      * Unregister ClientEventListener.
      * 
-     * @param listener
-     *            ClientEventListener.
+     * @param listener ClientEventListener.
      */
     public void unregisterClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.remove(listener);
@@ -97,19 +92,13 @@ public class EventHandler {
     /**
      * Call server event.
      * 
-     * @param event
-     *            ServerEvent.
+     * @param event ServerEvent.
      */
     public void callEvent(ServerEvent event) {
         switch (event.getEvent()) {
-        case SERVER_FAILED_TO_ACCEPT_CONNECTION:
+        case SERVER_CLIENT_FAILED_TO_CONNECT:
             for (ServerEventListener listener : this.serverEventListeners) {
-                listener.onServerFailedToAcceptConnection((ServerFailedToAcceptConnection) event);
-            }
-            break;
-        case SERVER_RECEIVE_INVALID_HANDSHAKE:
-            for (ServerEventListener listener : this.serverEventListeners) {
-                listener.onServerReceiveInvalidHandshake((ServerReceiveInvalidHandshake) event);
+                listener.onServerClientFailedToConnect((ServerClientFailedToConnect) event);
             }
             break;
         case SERVER_CLIENT_CONNECT:
@@ -143,8 +132,7 @@ public class EventHandler {
     /**
      * Call client event.
      * 
-     * @param event
-     *            ClientEvent.
+     * @param event ClientEvent.
      */
     public void callEvent(ClientEvent event) {
         switch (event.getEvent()) {
@@ -153,14 +141,14 @@ public class EventHandler {
                 listener.onClientServerConnect((ClientServerConnect) event);
             }
             break;
+        case CLIENT_FAILED_TO_CONNECT_TO_SERVER:
+            for (ClientEventListener listener : this.clientEventListeners) {
+                listener.onClientFailedToConnectToServer((ClientFailedToConnectToServer) event);
+            }
+            break;
         case CLIENT_SERVER_DISCONNECT:
             for (ClientEventListener listener : this.clientEventListeners) {
                 listener.onClientServerDisconnect((ClientServerDisconnect) event);
-            }
-            break;
-        case CLIENT_RECEIVE_INVALID_HANDSHAKE:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientReceiveInvalidHandshake((ClientReceiveInvalidHandshake) event);
             }
             break;
         case CLIENT_INVALID_PACKET:

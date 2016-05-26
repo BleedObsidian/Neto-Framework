@@ -38,10 +38,8 @@ public class ServerClientConnect extends ServerEvent {
     /**
      * New ServerClientConnect event.
      * 
-     * @param server
-     *            Server.
-     * @param connection
-     *            New Connection.
+     * @param server Server.
+     * @param connection New Connection.
      */
     public ServerClientConnect(Server server, ClientConnection connection) {
         super(server, ServerEvents.SERVER_CLIENT_CONNECT);

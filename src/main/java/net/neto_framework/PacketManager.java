@@ -36,8 +36,7 @@ public class PacketManager {
     /**
      * Register packet.
      * 
-     * @param packet
-     *            Packet.
+     * @param packet Packet.
      */
     public void registerPacket(Packet packet) {
         if(!this.packets.containsKey(packet.getID())) {
@@ -48,8 +47,7 @@ public class PacketManager {
     /**
      * Unregister packet.
      * 
-     * @param packet
-     *            Packet.
+     * @param packet Packet.
      */
     public void unregisterPacket(Packet packet) {
         if(this.packets.containsKey(packet.getID())) {
@@ -60,18 +58,12 @@ public class PacketManager {
     /**
      * Receive packet.
      * 
-     * @param id
-     *            Packet ID.
-     * @param connection
-     *            Connection.
-     * @param receiver
-     *            PacketReceiver.
-     * @throws InstantiationException
-     *             If fails to create packet.
-     * @throws IllegalAccessException
-     *             If fails to create packet.
-     * @throws IOException
-     *             If fails to receive packet.
+     * @param id Packet ID.
+     * @param connection Connection.
+     * @param receiver PacketReceiver.
+     * @throws InstantiationException If fails to create packet.
+     * @throws IllegalAccessException If fails to create packet.
+     * @throws IOException If fails to receive packet.
      */
     public void receive(int id, Connection connection, PacketReceiver receiver)
             throws InstantiationException, IllegalAccessException, IOException {
@@ -81,8 +73,7 @@ public class PacketManager {
     }
 
     /**
-     * @param id
-     *            Packet ID.
+     * @param id Packet ID.
      * @return If has packet with given ID.
      */
     public boolean hasPacket(int id) {

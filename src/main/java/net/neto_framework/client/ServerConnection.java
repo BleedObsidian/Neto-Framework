@@ -21,8 +21,6 @@ package net.neto_framework.client;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
@@ -51,103 +49,106 @@ public class ServerConnection implements Runnable {
     /**
      * New ServerConnection.
      * 
-     * @param client
-     *            Client.
-     * @param connection
-     *            Connection.
+     * @param client Client.
+     * @param connection Connection.
      */
     public ServerConnection(Client client, Connection connection) {
         this.client = client;
         this.connection = connection;
     }
 
+    @Override
     public void run() {
-        while (this.client.isConnected() && 
-                this.client.getProtocol() == Protocol.TCP) {
-            try {
-                int packetID = this.connection.receiveInteger();
+        while (this.client.isConnected()) {
+            if(this.client.getProtocol() == Protocol.TCP) {
+                try {
+                    int packetID = this.connection.receiveInteger();
 
-                if (this.client.getPacketManager().hasPacket(packetID)) {
-                    try {
-                        this.client.getPacketManager().receive(packetID,
-                                this.connection, PacketReceiver.CLIENT);
-                    } catch (InstantiationException e) {
+                    if (this.client.getPacketManager().hasPacket(packetID)) {
+                        try {
+                            this.client.getPacketManager().receive(packetID,
+                                    this.connection, PacketReceiver.CLIENT);
+                        } catch (InstantiationException e) {
+                            PacketException exception = new PacketException(
+                                    "Failed to create instance of packet.", e);
+                            this.client.getEventHandler().callEvent(
+                                    new ClientPacketException(this.client,
+                                            exception));
+                        } catch (IllegalAccessException e) {
+                            PacketException exception = new PacketException(
+                                    "Failed to create instance of packet.", e);
+                            this.client.getEventHandler().callEvent(
+                                    new ClientPacketException(this.client,
+                                            exception));
+                        }
+                    } else {
                         PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
-                        this.client.getEventHandler().callEvent(
-                                new ClientPacketException(this.client,
-                                        exception));
-                    } catch (IllegalAccessException e) {
-                        PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
+                                "Invalid packet received.");
                         this.client.getEventHandler().callEvent(
                                 new ClientPacketException(this.client,
                                         exception));
                     }
-                } else {
+                } catch (IOException e) {
                     PacketException exception = new PacketException(
-                            "Invalid packet received.");
+                            "Failed to receive packet.", e);
                     this.client.getEventHandler().callEvent(
                             new ClientPacketException(this.client, exception));
                 }
-            } catch (IOException e) {
-                PacketException exception = new PacketException(
-                        "Failed to receive packet ID.", e);
-                this.client.getEventHandler().callEvent(
-                        new ClientPacketException(this.client, exception));
-            }
-        }
-        
-        while (this.client.isConnected() && 
-                this.client.getProtocol() == Protocol.UDP) {
-            byte[] data = new byte[65508];
-            DatagramPacket receivePacket = new DatagramPacket(data,
-                    data.length);
+            } else {
+                byte[] data = new byte[65508];
+                DatagramPacket receivePacket = new DatagramPacket(data,
+                        data.length);
 
-            try {
-                this.client.getUdpSocket().receive(receivePacket);
+                try {
+                    this.client.getUdpSocket().receive(receivePacket);
                 
-                ByteArrayInputStream inputStream = 
-                    new ByteArrayInputStream(data);
-                
-                this.connection.setUdpDataInputStream(inputStream);
-                String uuid = this.connection.receiveString();
-                
-                if(this.client.getUUID().toString().equals(uuid)) {
-                    int packetId = this.connection.receiveInteger();
-                
-                    if(this.client.getPacketManager().hasPacket(packetId)) {
-                        this.client.getPacketManager().receive(packetId,
-                                this.connection, PacketReceiver.CLIENT);
+
+                    ByteArrayInputStream inputStream = 
+                        new ByteArrayInputStream(data);
+
+                    this.connection.setUdpDataInputStream(inputStream);
+                    String uuid = this.connection.receiveString();
+
+                    if(this.client.getUUID().toString().equals(uuid)) {
+                        int packetId = this.connection.receiveInteger();
+
+                        if(this.client.getPacketManager().hasPacket(packetId)) {
+                            try {
+                                this.client.getPacketManager().receive(packetId,
+                                        this.connection, PacketReceiver.CLIENT);
+                            }  catch (InstantiationException e) {
+                                PacketException exception = new PacketException(
+                                        "Failed to create instance of packet.",
+                                        e);
+                                this.client.getEventHandler().callEvent(
+                                        new ClientPacketException(this.client, 
+                                                exception));
+                            } catch (IllegalAccessException e) {
+                                PacketException exception = new PacketException(
+                                        "Failed to create instance of packet.",
+                                        e);
+                                this.client.getEventHandler().callEvent(
+                                        new ClientPacketException(this.client,
+                                                exception));
+                            }
+                        } else {
+                            PacketException exception = new PacketException(
+                            "Invalid packet received.");
+                            this.client.getEventHandler().callEvent(
+                            new ClientPacketException(this.client, exception));
+                        }
                     } else {
                         PacketException exception = new PacketException(
-                        "Invalid packet reveived.");
-                        this.client.getEventHandler().callEvent(
-                        new ClientPacketException(this.client, exception));
+                            "Received UDP packet with wrong UUID.");
+                    this.client.getEventHandler().callEvent(
+                            new ClientPacketException(this.client, exception));
                     }
-                } else {
+                } catch (IOException e) {
                     PacketException exception = new PacketException(
-                        "Received UDP packet with wrong UUID.");
-                this.client.getEventHandler().callEvent(
-                        new ClientPacketException(this.client, exception));
+                            "Failed to receive packet.", e);
+                    this.client.getEventHandler().callEvent(
+                            new ClientPacketException(this.client, exception));
                 }
-            } catch (IOException e) {
-                PacketException exception = new PacketException(
-                        "Failed to read UDP packet.", e);
-                this.client.getEventHandler().callEvent(
-                        new ClientPacketException(this.client, exception));
-            } catch (InstantiationException e) {
-                PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
-                        this.client.getEventHandler().callEvent(
-                                new ClientPacketException(this.client,
-                                        exception));
-            } catch (IllegalAccessException e) {
-                PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
-                        this.client.getEventHandler().callEvent(
-                                new ClientPacketException(this.client,
-                                        exception));
             }
         }
     }
@@ -155,10 +156,8 @@ public class ServerConnection implements Runnable {
     /**
      * Send server packet.
      * 
-     * @param packet
-     *            Packet.
-     * @throws IOException
-     *             If fails to send packet.
+     * @param packet Packet.
+     * @throws IOException If fails to send packet.
      */
     public void sendPacket(Packet packet) throws IOException {
         if(this.client.getProtocol() == Protocol.TCP) {
@@ -169,13 +168,11 @@ public class ServerConnection implements Runnable {
             this.connection.sendInteger(packet.getID());
             packet.send(this.connection);
             
-            byte[] data = this.connection.getUdpDataOutputStream().
-                    toByteArray();
+            byte[] data = this.connection.getUdpData();
             DatagramPacket dataPacket = new DatagramPacket(data, data.length,
                     this.client.getAddress().getInetAddress(),
                     this.client.getAddress().getPort());
             this.client.getUdpSocket().send(dataPacket);
-            this.connection.flush();
         }
     }
 }

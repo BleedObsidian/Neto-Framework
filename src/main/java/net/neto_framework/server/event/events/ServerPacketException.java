@@ -39,10 +39,8 @@ public class ServerPacketException extends ServerEvent {
     /**
      * New ServerPacketException Event.
      * 
-     * @param server
-     *            Server.
-     * @param exception
-     *            PacketException.
+     * @param server Server.
+     * @param exception PacketException.
      */
     public ServerPacketException(Server server, PacketException exception) {
         super(server, ServerEvents.SERVER_PACKET_EXCEPTION);
