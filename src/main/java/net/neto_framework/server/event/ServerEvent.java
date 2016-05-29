@@ -28,37 +28,65 @@ import net.neto_framework.server.Server;
 public class ServerEvent {
     
     /**
-     * Server.
+     * Running instance of server.
      */
     private final Server server;
     
     /**
-     * ServerEvents.
+     * Event.
      */
-    private final ServerEvents event;
+    private final Event event;
 
     /**
-     * New ServerEvent.
-     * 
-     * @param server Server.
-     * @param event ServerEvents.
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
+     * @param event Which {@link Event Event} this represents.
      */
-    public ServerEvent(Server server, ServerEvents event) {
+    public ServerEvent(Server server, Event event) {
         this.server = server;
         this.event = event;
     }
 
     /**
-     * @return Server.
+     * @return Running instance of {@link net.neto_framework.server.Server Server}.
      */
     public Server getServer() {
         return this.server;
     }
 
     /**
-     * @return ServerEvents.
+     * @return Which {@link Event Event} this represents.
      */
-    public ServerEvents getEvent() {
+    public Event getEvent() {
         return this.event;
     }
+    
+    /**
+    * An enum that contains all registered server events.
+    * 
+    * @author BleedObsidian (Jesse Prescott)
+    */
+   public enum Event {
+       
+       /**
+        * {@link net.neto_framework.server.event.events.ClientConnectEvent ClientConnectEvent}.
+        */
+       CLIENT_CONNECT,
+       
+       /**
+        * {@link net.neto_framework.server.event.events.ClientFailedToConnectEvent 
+        * ClientFailedToConnectEvent}.
+        */
+       CLIENT_FAILED_TO_CONNECT,
+       
+       /**
+        * {@link net.neto_framework.server.event.events.ClientDisconnectEvent 
+        * ClientDisconnectEvent}.
+        */
+       CLIENT_DISCONNECT,
+       
+       /**
+        * {@link net.neto_framework.server.event.events.PacketExceptionEvent PacketExceptionEvent}.
+        */
+       PACKET_EXCEPTION;
+   }
 }

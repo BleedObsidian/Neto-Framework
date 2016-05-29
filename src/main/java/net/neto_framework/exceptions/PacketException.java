@@ -31,8 +31,6 @@ public class PacketException extends Exception {
     private static final long serialVersionUID = 2157534617064673101L;
 
     /**
-     * New PacketException with cause exception.
-     * 
      * @param message Reason for exception.
      * @param exception Cause exception.
      */
@@ -41,8 +39,6 @@ public class PacketException extends Exception {
     }
 
     /**
-     * New PacketException with cause exception.
-     * 
      * @param message Reason for exception.
      */
     public PacketException(String message) {

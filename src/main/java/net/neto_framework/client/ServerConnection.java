@@ -21,7 +21,6 @@ package net.neto_framework.client;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
-
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.PacketReceiver;
@@ -68,15 +67,9 @@ public class ServerConnection implements Runnable {
                         try {
                             this.client.getPacketManager().receive(packetID,
                                     this.connection, PacketReceiver.CLIENT);
-                        } catch (InstantiationException e) {
+                        } catch (IOException e) {
                             PacketException exception = new PacketException(
-                                    "Failed to create instance of packet.", e);
-                            this.client.getEventHandler().callEvent(
-                                    new ClientPacketException(this.client,
-                                            exception));
-                        } catch (IllegalAccessException e) {
-                            PacketException exception = new PacketException(
-                                    "Failed to create instance of packet.", e);
+                                    "Failed to read packet.", e);
                             this.client.getEventHandler().callEvent(
                                     new ClientPacketException(this.client,
                                             exception));
@@ -116,19 +109,12 @@ public class ServerConnection implements Runnable {
                             try {
                                 this.client.getPacketManager().receive(packetId,
                                         this.connection, PacketReceiver.CLIENT);
-                            }  catch (InstantiationException e) {
+                            }  catch (IOException e) {
                                 PacketException exception = new PacketException(
-                                        "Failed to create instance of packet.",
+                                        "Failed to read packet.",
                                         e);
                                 this.client.getEventHandler().callEvent(
                                         new ClientPacketException(this.client, 
-                                                exception));
-                            } catch (IllegalAccessException e) {
-                                PacketException exception = new PacketException(
-                                        "Failed to create instance of packet.",
-                                        e);
-                                this.client.getEventHandler().callEvent(
-                                        new ClientPacketException(this.client,
                                                 exception));
                             }
                         } else {

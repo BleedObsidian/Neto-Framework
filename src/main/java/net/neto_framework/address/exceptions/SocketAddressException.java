@@ -31,8 +31,6 @@ public class SocketAddressException extends Exception {
     private static final long serialVersionUID = -3147497186902377305L;
 
     /**
-     * New SocketAddressException.
-     * 
      * @param message Reason for exception.
      */
     public SocketAddressException(String message) {
@@ -40,8 +38,6 @@ public class SocketAddressException extends Exception {
     }
 
     /**
-     * New SocketAddressException with cause exception.
-     * 
      * @param message Reason for exception.
      * @param exception Cause exception.
      */

@@ -23,7 +23,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
-
 import net.neto_framework.Connection;
 
 /**
@@ -34,68 +33,90 @@ import net.neto_framework.Connection;
 public class ServerConnectionManager {
     
     /**
-     * All ClientConnections.
+     * A hashmap of all connected {@link 
+     * net.neto_framework.server.ClientConnection ClientConnections} and their
+     * UUID as keys.
      */
-    private volatile HashMap<UUID, ClientConnection> connections = new HashMap<UUID, ClientConnection>();
+    private volatile HashMap<UUID, ClientConnection> connections = 
+            new HashMap<>();
 
     /**
-     * Add given TCP connection into pool.
+     * Add given clientConnection into pool.
      * 
-     * @param server Server.
-     * @param socket Socket of new TCP connection.
-     * @return Unique ID.
+     * @param server Running instance of {@link net.neto_framework.server.Server
+     *               Server}.
+     * @param connection The {@link net.neto_framework.Connection Connection}.
+     * @return {@link net.neto_framework.server.ClientConnection ClientConnection}.
      */
-    public UUID addConnection(Server server, Socket socket) {
+    public ClientConnection addClientConnection(Server server, Connection connection) {
         UUID uuid = UUID.randomUUID();
-        ClientConnection connection = new ClientConnection(server, uuid,
-                new Connection(socket));
-        this.connections.put(uuid, connection);
-        (new Thread(connection)).start();
+        ClientConnection clientConnection = new ClientConnection(server, uuid, connection);
+        this.connections.put(uuid, clientConnection);
+        (new Thread(clientConnection)).start();
 
-        return uuid;
+        return clientConnection;
+    }
+    
+    /**
+     * Add given TCP clientConnection into pool.
+     * 
+     * @param server Running instance of {@link net.neto_framework.server.Server
+     *               Server}.
+     * @param socket TCP socket used to communicate with client.
+     * @return {@link net.neto_framework.server.ClientConnection ClientConnection}.
+     */
+    public ClientConnection addClientConnection(Server server, Socket socket) {
+        UUID uuid = UUID.randomUUID();
+        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(
+                socket));
+        this.connections.put(uuid, clientConnection);
+        (new Thread(clientConnection)).start();
+
+        return clientConnection;
     }
 
     /**
-     * Add given UDP connection into pool.
+     * Add given UDP clientConnection into pool.
      * 
-     * @param server Server.
-     * @param address InetAddress of new UDP connection.
-     * @param port Port number of new UDP connection.
-     * @return Unique ID.
+     * @param server Running instance of {@link net.neto_framework.server.Server
+     *               Server}.
+     * @param address InetAddress of new UDP clientConnection.
+     * @param port Port number of new UDP clientConnection.
+     * @return {@link net.neto_framework.server.ClientConnection ClientConnection}.
      */
-    public UUID addClientConnection(Server server, InetAddress address, int port) {
+    public ClientConnection addClientConnection(Server server, InetAddress address, int port) {
         UUID uuid = UUID.randomUUID();
-        ClientConnection connection = new ClientConnection(server, uuid,
-                new Connection(server.getUdpSocket(), address, port));
-        this.connections.put(uuid, connection);
-        (new Thread(connection)).start();
+        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(
+                server.getUdpSocket(), address, port));
+        this.connections.put(uuid, clientConnection);
+        (new Thread(clientConnection)).start();
 
-        return uuid;
+        return clientConnection;
     }
 
     /**
-     * Remove connection.
+     * Remove ClientConnection.
      * 
-     * @param uuid Unique ID of connection.
+     * @param uuid UUID of ClientConnection.
      */
     public void removeClientConnection(UUID uuid) {
         this.connections.remove(uuid);
     }
 
     /**
-     * If connection pool contains a connection with the given ID.
+     * If clientConnection pool contains a ClientConnection with the given UUID.
      * 
-     * @param uuid Unique ID of connection.
-     * @return If connection exists.
+     * @param uuid UUID of client.
+     * @return If ClientConnection exists.
      */
     public boolean hasClientConnection(UUID uuid) {
         return this.connections.containsKey(uuid);
     }
 
     /**
-     * Get Connection handle for connection with given ID.
+     * Get ClientConnection from given UUID.
      * 
-     * @param uuid Unique ID of connection.
+     * @param uuid UUID.
      * @return Connection.
      */
     public ClientConnection getClientConnection(UUID uuid) {
@@ -103,14 +124,14 @@ public class ServerConnectionManager {
     }
     
     /**
-     * @return List<ClientConnection>.
+     * @return ArrayList<ClientConnection>.
      */
     public ArrayList<ClientConnection> getClientConnections() {
-        ArrayList<ClientConnection> values = new ArrayList<ClientConnection>();
+        ArrayList<ClientConnection> values = new ArrayList<>();
         
-        for(ClientConnection connection : this.connections.values()) {
+        this.connections.values().stream().forEach((connection) -> {
             values.add(connection);
-        }
+        });
         
         return values;
     }

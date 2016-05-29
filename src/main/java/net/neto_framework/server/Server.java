@@ -22,13 +22,10 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
-
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
-import net.neto_framework.server.event.events.ServerStart;
-import net.neto_framework.server.event.events.ServerStop;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -39,7 +36,7 @@ import net.neto_framework.server.exceptions.ServerException;
  */
 public class Server {
     /**
-     * The default backlog value for TCP servers.
+     * Default backlog value for TCP servers.
      */
     public static final int DEFAULT_BACKLOG = 50;
 
@@ -49,61 +46,65 @@ public class Server {
     public static final Protocol DEFAULT_PROTOCOL = Protocol.TCP;
 
     /**
-     * Server PacketManager.
+     * The {@link net.neto_framework.PacketManager PacketManager}.
      */
     private final PacketManager packetManager;
 
     /**
-     * ServerConnectionHandler.
+     * The {@link net.neto_framework.server.ServerConnectionHandler 
+     * ServerConnectionHandler}.
      */
     private final ServerConnectionHandler connectionHandler;
     
     /**
-     * ServerConnectionManager.
+     * The {@link net.neto_framework.server.ServerConnectionManager
+     * ServerConnectionManager}.
      */
     private final ServerConnectionManager connectionManager;
 
     /**
-     * Server EventHandler.
+     * The {@link net.neto_framework.event.EventHandler EventHandler}.
      */
     private final EventHandler eventHandler;
 
     /**
-     * Server SocketAddress to run on.
+     * The {@link net.neto_framework.address.SocketAddress SocketAddress} the
+     * server is running or to be run on.
      */
     private final SocketAddress address;
     
     /**
-     * Server Protocol to use.
+     * The {@link net.neto_framework.Protocol Protocol} the server is using.
      */
     private final Protocol protocol;
     
     /**
-     * Server backlog.
+     * The TCP backlog value.
      */
     private final int backlog;
 
     /**
-     * TCP Socket.
+     * The TCP Socket. (If using TCP)
      */
     private ServerSocket tcpSocket;
     
     /**
-     * UDP Socket.
+     * The UDP Socket. (If using UDP)
      */
     private DatagramSocket udpSocket;
 
     /**
-     * If server is running.
+     * If the server is currently running.
      */
     private boolean isRunning;
 
     /**
-     * New server that binds to given address and uses a given protocol.
-     * 
-     * @param packetManager PacketManager.
-     * @param address SocketAddress for server to bind to.
-     * @param protocol Protocol for server to use.
+     * @param packetManager The {@link net.neto_framework.PacketManager
+     *                      PacketManager}.
+     * @param address {@link net.neto_framework.address.SocketAddress
+     *                SocketAddress} for server to bind to.
+     * @param protocol {@link net.neto_framework.Protocol Protocol} for server
+     *                 to use.
      * @param backlog Maximum amount of connections to queue for TCP.
      */
     public Server(PacketManager packetManager, SocketAddress address,
@@ -117,14 +118,16 @@ public class Server {
         this.address = address;
         this.protocol = protocol;
         this.backlog = backlog;
+        //TODO: Only choose protocol when sending a packet. Only do handhshake process in TCP.
     }
 
     /**
-     * New server that binds to given address and uses a given protocol.
-     * 
-     * @param packetManager PacketManager.
-     * @param address SocketAddress for server to bind to.
-     * @param protocol Protocol for server to use.
+     * @param packetManager The {@link net.neto_framework.PacketManager
+     *                      PacketManager}.
+     * @param address {@link net.neto_framework.address.SocketAddress
+     *                SocketAddress} for server to bind to.
+     * @param protocol {@link net.neto_framework.Protocol Protocol} for server
+     *                 to use.
      */
     public Server(PacketManager packetManager, SocketAddress address,
             Protocol protocol) {
@@ -140,44 +143,10 @@ public class Server {
     }
 
     /**
-     * New server that binds to given address and uses TCP.
-     * 
-     * @param packetManager PacketManager.
-     * @param address SocketAddress for server to bind to.
-     */
-    public Server(PacketManager packetManager, SocketAddress address) {
-        this.packetManager = packetManager;
-        this.connectionHandler = new ServerConnectionHandler(this);
-        this.connectionManager = new ServerConnectionManager();
-
-        this.eventHandler = new EventHandler();
-
-        this.address = address;
-        this.protocol = Server.DEFAULT_PROTOCOL;
-        this.backlog = Server.DEFAULT_BACKLOG;
-    }
-
-    /**
-     * New server that is not bound to anything.
-     * 
-     * @param packetManager PacketManager.
-     */
-    public Server(PacketManager packetManager) {
-        this.packetManager = packetManager;
-        this.connectionHandler = new ServerConnectionHandler(this);
-        this.connectionManager = new ServerConnectionManager();
-
-        this.eventHandler = new EventHandler();
-
-        this.address = null;
-        this.protocol = Server.DEFAULT_PROTOCOL;
-        this.backlog = Server.DEFAULT_BACKLOG;
-    }
-
-    /**
      * Start accepting and listening for incoming connections.
      * 
-     * @throws ServerException If fails to start server.
+     * @throws net.neto_framework.server.exceptions.ServerException if fails to
+     *         start.
      */
     public void start() throws ServerException {
         if (!this.isRunning) {
@@ -206,15 +175,14 @@ public class Server {
                             "Failed to start server on given address.", e);
                 }
             }
-
-            this.eventHandler.callEvent(new ServerStart(this));
         }
     }
 
     /**
      * Stop accepting and listening for incoming connections.
      * 
-     * @throws ServerException If fails to stop server.
+     * @throws net.neto_framework.server.exceptions.ServerException if fails to
+     *         stop.
      */
     public void stop() throws ServerException {
         if (this.isRunning) {
@@ -232,41 +200,40 @@ public class Server {
 
                 this.isRunning = false;
             }
-
-            this.eventHandler.callEvent(new ServerStop(this));
         }
     }
 
     /**
-     * @return PacketManager.
+     * @return {@link net.neto_framework.PacketManager PacketManager}.
      */
-    public synchronized PacketManager getPacketManager() {
+    public PacketManager getPacketManager() {
         return this.packetManager;
     }
 
     /**
-     * @return EventHandler.
+     * @return {@link net.neto_framework.event.EventHandler EventHandler}.
      */
-    public synchronized EventHandler getEventHandler() {
+    public EventHandler getEventHandler() {
         return this.eventHandler;
     }
 
     /**
-     * @return Address that server is binding to.
+     * @return {@link net.neto_framework.address.SocketAddress} the server is
+     *         /will bind to.
      */
     public SocketAddress getAddress() {
         return this.address;
     }
 
     /**
-     * @return Protocol the server is using.
+     * @return {@link net.neto_framework.Protocol Protocol} the server is using.
      */
     public synchronized Protocol getProtocol() {
         return this.protocol;
     }
 
     /**
-     * @return TCP Backlog.
+     * @return TCP Backlog value.
      */
     public int getBacklog() {
         return this.backlog;
@@ -296,7 +263,8 @@ public class Server {
     }
 
     /**
-     * @return ServerConnectionManager of this server.
+     * @return {@link net.neto_framework.server.ServerConnectionManager
+     * ServerConnectionManager} of this server.
      */
     public synchronized ServerConnectionManager getConnectionManager() {
         return this.connectionManager;

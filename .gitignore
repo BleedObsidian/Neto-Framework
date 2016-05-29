@@ -52,6 +52,7 @@ MANIFEST.MF
 build
 dist
 nbproject
+nb-configuration.xml
 build.xml
 
 # IntelliJ IDEA files #

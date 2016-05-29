@@ -31,7 +31,7 @@ public class PacketManager {
     /**
      * HashMap of all registered packets.
      */
-    private final HashMap<Integer, Packet> packets = new HashMap<Integer, Packet>();
+    private final HashMap<Integer, Packet> packets = new HashMap<>();
 
     /**
      * Register packet.
@@ -61,15 +61,18 @@ public class PacketManager {
      * @param id Packet ID.
      * @param connection Connection.
      * @param receiver PacketReceiver.
-     * @throws InstantiationException If fails to create packet.
-     * @throws IllegalAccessException If fails to create packet.
      * @throws IOException If fails to receive packet.
      */
-    public void receive(int id, Connection connection, PacketReceiver receiver)
-            throws InstantiationException, IllegalAccessException, IOException {
-        Packet packet = this.packets.get(id).getClass().newInstance();
-        packet.receive(connection);
-        packet.onReceive(packet, receiver);
+    public void receive(int id, Connection connection, PacketReceiver receiver) throws IOException {
+        try {
+            Packet packet = this.packets.get(id).getClass().newInstance();
+            packet.receive(connection);
+            packet.onReceive(packet, receiver);
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Packet " + id + " class has a constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Packet " + id + " illegal access.", e);
+        }
     }
 
     /**

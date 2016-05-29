@@ -18,43 +18,43 @@
 
 package net.neto_framework.server.event.events;
 
+import net.neto_framework.server.ClientConnection;
 import net.neto_framework.server.Server;
 import net.neto_framework.server.event.ServerEvent;
-import net.neto_framework.server.event.ServerEvents;
-import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
- * Fired when a new client tried to connect but failed. Reasons can include
- * I/O Exceptions or Invalid Handshakes.
+ * An event that is fired when a new client successfully connects to the server.
+ * <p>
+ * This event contains the new {@link net.neto_framework.server.ClientConnection
+ * ClientConnection} that can be used to send packets.
  * 
  * @author BleedObsidian (Jesse Precott)
  */
-public class ServerClientFailedToConnect extends ServerEvent {
+public class ClientConnectEvent extends ServerEvent {
     
     /**
-     * ConnectionException thrown.
+     * The new ClientConnection.
      */
-    private final ConnectionException exception;
+    private final ClientConnection connection;
 
     /**
-     * New ServerClientFailedToConnect event.
-     * 
-     * @param server
-     *            Server of origin.
-     * @param exception
-     *            Exception thrown.
+     * @param server Running instance of {@link net.neto_framework.server.Server
+     *               Server}.
+     * @param connection The new {@link
+     *                   net.neto_framework.server.ClientConnection
+     *                   ClientConnection}.
      */
-    public ServerClientFailedToConnect(Server server, 
-            ConnectionException exception) {
-        super(server, ServerEvents.SERVER_CLIENT_FAILED_TO_CONNECT);
+    public ClientConnectEvent(Server server, ClientConnection connection) {
+        super(server, Event.CLIENT_CONNECT);
 
-        this.exception = exception;
+        this.connection = connection;
     }
 
     /**
-     * @return ConnectionException thrown.
+     * @return The new {@link net.neto_framework.server.ClientConnection
+     *         ClientConnection}.
      */
-    public ConnectionException getException() {
-        return this.exception;
+    public ClientConnection getClientConnection() {
+        return this.connection;
     }
 }

@@ -21,133 +21,100 @@ package net.neto_framework.server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.UUID;
-
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.PacketReceiver;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
-import net.neto_framework.server.event.events.ServerClientConnect;
-import net.neto_framework.server.event.events.ServerClientFailedToConnect;
-import net.neto_framework.server.event.events.ServerInvalidPacket;
-import net.neto_framework.server.event.events.ServerPacketException;
-import net.neto_framework.server.exceptions.ConnectionException;
+import net.neto_framework.server.event.events.ClientDisconnectEvent;
+import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
+import net.neto_framework.server.event.events.PacketExceptionEvent;
 
 /**
- * A connection thread to handle all client connections individually.
+ * A thread to handle all client connections individually.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientConnection implements Runnable {
     
     /**
-     * Unique ID of ClientConnection.
+     * UUID of client.
      */
     private final UUID uuid;
 
     /**
-     * Server.
+     * Running instance of Server.
      */
     private final Server server;
     
     /**
-     * Connection of ClientConnection.
+     * Connection.
      */
     private final Connection connection;
+    
+    /**
+     * If the client is currently connected.
+     */
+    private boolean isConnected;
 
     /**
-     * New ClientConnection.
-     * 
-     * @param server Server.
-     * @param uuid Unique ID of client.
-     * @param connection Connection.
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
+     * @param uuid UUID of client.
+     * @param connection {@link net.neto_framework.Connection Connection}.
      */
     public ClientConnection(Server server, UUID uuid, Connection connection) {
         this.server = server;
         this.uuid = uuid;
         this.connection = connection;
+        this.isConnected = true;
     }
 
     @Override
     public void run() {
-        if (this.server.getProtocol() == Protocol.TCP) {
-            byte[] magicStringBuffer = Connection.MAGIC_STRING.getBytes();
-            
+        while (this.server.isRunning() && this.server.getProtocol() == Protocol.TCP &&
+                this.isConnected) {
+            int packetId;
             try {
-                byte[] buffer = new byte[Connection.MAGIC_STRING
-                        .getBytes().length];
-                this.connection.getTCPSocket().getInputStream().read(buffer);
-
-                if (!new String(buffer).equals(Connection.MAGIC_STRING)) {
-                    ServerClientFailedToConnect event = 
-                            new ServerClientFailedToConnect(this.server,
-                                    new ConnectionException(
-                                            "Invalid Handshake: Wrong magic " +
-                                                    "string received."));
-                    this.server.getEventHandler().callEvent(event);
-                    return;
-                }
+                packetId = this.connection.receiveInteger();
             } catch (IOException e) {
-                ServerClientFailedToConnect event = 
-                            new ServerClientFailedToConnect(this.server,
-                                    new ConnectionException(
-                                            "I/O Error when reading TCP " +
-                                                    "handshake."));
+                PacketException exception = new PacketException("Failed to read packet.", e);
+                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
+                        this.uuid);
+                this.server.getEventHandler().callEvent(packetEvent);
+                
+                this.disconnect();
+                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
                 this.server.getEventHandler().callEvent(event);
-                return;
+                break;
             }
-
-            try {
-                this.connection.getTCPSocket().getOutputStream()
-                        .write(magicStringBuffer);
-            } catch (IOException e) {
-                ServerClientFailedToConnect event = 
-                            new ServerClientFailedToConnect(this.server,
-                                    new ConnectionException(
-                                            "I/O Error when sending TCP " +
-                                                    "handshake."));
-                this.server.getEventHandler().callEvent(event);
-                return;
-            }
-        }
-
-        this.server.getEventHandler().callEvent(
-                new ServerClientConnect(this.server, this));
-
-        while (this.server.isRunning() && 
-                this.server.getProtocol() == Protocol.TCP) {
-            try {
-                int packetID = this.connection.receiveInteger();
-
-                if (this.server.getPacketManager().hasPacket(packetID)) {
-                    try {
-                        this.server.getPacketManager().receive(packetID,
-                                this.connection, PacketReceiver.SERVER);
-                    } catch (InstantiationException e) {
-                        PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
-                        this.server.getEventHandler().callEvent(
-                                new ServerPacketException(this.server,
-                                        exception));
-                    } catch (IllegalAccessException e) {
-                        PacketException exception = new PacketException(
-                                "Failed to create instance of packet.", e);
-                        this.server.getEventHandler().callEvent(
-                                new ServerPacketException(this.server,
-                                        exception));
-                    }
-                } else {
-                    PacketException exception = new PacketException(
-                            "Invalid packet received.");
-                    this.server.getEventHandler().callEvent(
-                            new ServerInvalidPacket(this.server, packetID,
+                
+            if (this.server.getPacketManager().hasPacket(packetId)) {
+                try {
+                    this.server.getPacketManager().receive(packetId, 
+                            this.connection, PacketReceiver.SERVER);
+                } catch (IOException e) {
+                    PacketException exception = new PacketException("Failed to read packet.", e);
+                    this.server.getEventHandler().callEvent(new PacketExceptionEvent(this.server, 
                                     exception));
+                    
+                    this.disconnect();
+                    ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                            ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                    this.server.getEventHandler().callEvent(event);
+                    break;
                 }
-            } catch (IOException e) {
-                PacketException exception = new PacketException(
-                        "Failed to receive packet ID.", e);
-                this.server.getEventHandler().callEvent(
-                        new ServerPacketException(this.server, exception));
+            } else {
+                PacketException exception = new PacketException("Unkown packet received.");
+                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
+                        this.uuid);
+                this.server.getEventHandler().callEvent(packetEvent);
+                
+                this.disconnect();
+                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                this.server.getEventHandler().callEvent(event);
+                break;
             }
         }
     }
@@ -173,11 +140,30 @@ public class ClientConnection implements Runnable {
             this.server.getUdpSocket().send(dataPacket);
         }
     }
+    
+    /**
+     * Disconnect client from the server.
+     */
+    public void disconnect() {
+        if(this.server.getProtocol() == Protocol.TCP) {
+            this.isConnected = false;
+            this.server.getConnectionManager().removeClientConnection(this.uuid);
+                
+            try {
+                this.connection.getTCPSocket().close();
+            } catch (IOException e) { } //TODO: Log
+        } else {
+            this.isConnected = false;
+            this.server.getConnectionManager().removeClientConnection(this.uuid);
+        }
+        
+        //TODO: Send disconnect packet to client.
+    }
 
     /**
-     * @return Client ID.
+     * @return UUID.
      */
-    public UUID getClientID() {
+    public UUID getUUID() {
         return this.uuid;
     }
 

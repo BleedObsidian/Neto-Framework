@@ -29,27 +29,29 @@ public interface Packet {
     /**
      * Send packet to connection.
      * 
-     * @param connection Connection.
+     * @param connection {@link net.neto_framework.Connection Connection}.
+     * @throws java.io.IOException
      */
     public void send(Connection connection) throws IOException;
 
     /**
      * Receive packet from connection.
      * 
-     * @param connection Connection.
+     * @param connection {@link net.neto_framework.Connection Connection}.
+     * @throws java.io.IOException
      */
     public void receive(Connection connection) throws IOException;
 
     /**
      * Fired when this packet is received.
      * 
-     * @param packet Packet.
-     * @param receiver PacketReceiver.
+     * @param packet The {@link net.neto_framework.Packet Packet} instance.
+     * @param receiver The {@link net.neto_framework.PacketReceiver PacketReceiver}.
      */
     public void onReceive(Packet packet, PacketReceiver receiver);
 
     /**
      * @return Unique packet ID.
      */
-    public int getID();
+    public int getID(); //TODO: Make the packet manager assign ID's automatically.
 }

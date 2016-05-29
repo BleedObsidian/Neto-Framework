@@ -19,8 +19,8 @@
 package net.neto_framework.server.exceptions;
 
 /**
- * An exception thrown when failing to accept a socket connection or when
- * failing to receiving a handshake packet.
+ * An exception thrown when failing to accept a socket connection or when failing to receiving a
+ * handshake packet.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
@@ -32,8 +32,6 @@ public class ConnectionException extends Exception {
     private static final long serialVersionUID = 4404027049082607879L;
 
     /**
-     * New ConnectionException with cause exception.
-     * 
      * @param message Reason for exception.
      * @param exception Cause exception.
      */
@@ -42,8 +40,6 @@ public class ConnectionException extends Exception {
     }
     
     /**
-     * New ConnectionException.
-     * 
      * @param message Reason for exception.
      */
     public ConnectionException(String message) {

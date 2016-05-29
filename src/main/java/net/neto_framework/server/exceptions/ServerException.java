@@ -31,8 +31,6 @@ public class ServerException extends Exception {
     private static final long serialVersionUID = -1234551643243035737L;
 
     /**
-     * New ServerException with cause exception.
-     * 
      * @param message Reason for exception.
      * @param exception Cause exception.
      */

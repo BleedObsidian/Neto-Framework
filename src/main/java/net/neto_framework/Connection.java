@@ -107,13 +107,6 @@ public final class Connection {
         
         this.flush();
     }
-    
-    /**
-     * Flush the connection causing the output stream for UDP to reset.
-     */
-    public void flush() {
-        this.udpDataOutputStream = new ByteArrayOutputStream();
-    }
 
     /**
      * Send byte array to connection.
@@ -138,12 +131,23 @@ public final class Connection {
      */
     public byte[] receive(byte[] buffer) throws IOException {
         if (this.protocol == Protocol.TCP) {
-            this.tcpSocket.getInputStream().read(buffer);
+            if(!this.tcpSocket.isInputShutdown()) {
+                this.tcpSocket.getInputStream().read(buffer);
+            } else {
+                throw new IOException("Input shutdown");
+            }
             return buffer;
         } else {
             this.udpDataInputStream.read(buffer);
             return buffer;
         }
+    }
+    
+    /**
+     * Flush the connection causing the output stream for UDP to reset.
+     */
+    public void flush() {
+        this.udpDataOutputStream = new ByteArrayOutputStream();
     }
 
     /**

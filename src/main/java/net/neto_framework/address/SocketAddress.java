@@ -20,7 +20,6 @@ package net.neto_framework.address;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import net.neto_framework.address.exceptions.SocketAddressException;
 
 /**
@@ -42,10 +41,10 @@ public class SocketAddress {
     private final int port;
 
     /**
-     * New SocketAddress with localhost and given port.
+     * Use localhost and given port.
      * 
      * @param port Port number. (Max: 65535)
-     * @throws SocketAddressException If fails to create SocketAddress.
+     * @throws SocketAddressException if fails to create SocketAddress.
      */
     public SocketAddress(int port) throws SocketAddressException {
         try {
@@ -63,7 +62,7 @@ public class SocketAddress {
     }
 
     /**
-     * New SocketAddress with given host name and port.
+     * Use given host name and port.
      * 
      * @param host Host name. (Can be an IP address or machine name)
      * @param port Port number. (Max: 65535)
@@ -86,7 +85,7 @@ public class SocketAddress {
     }
 
     /**
-     * New SocketAddress with given host name and port.
+     * Use given host name in network byte order and port.
      * 
      * @param address Raw IP address in network byte order .
      * @param port Port number. (Max: 65535)
@@ -109,14 +108,14 @@ public class SocketAddress {
     }
 
     /**
-     * @return InetAddress of SocketAddress.
+     * @return {@link java.net.InetAddress InetAddress}.
      */
     public InetAddress getInetAddress() {
         return this.address;
     }
 
     /**
-     * @return Port number of SocketAddress.
+     * @return Port number.
      */
     public int getPort() {
         return this.port;

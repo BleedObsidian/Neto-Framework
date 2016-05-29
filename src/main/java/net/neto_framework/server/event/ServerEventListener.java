@@ -18,74 +18,55 @@
 
 package net.neto_framework.server.event;
 
-import net.neto_framework.server.event.events.ServerClientConnect;
-import net.neto_framework.server.event.events.ServerClientFailedToConnect;
-import net.neto_framework.server.event.events.ServerInvalidPacket;
-import net.neto_framework.server.event.events.ServerPacketException;
-import net.neto_framework.server.event.events.ServerStart;
-import net.neto_framework.server.event.events.ServerStop;
+import net.neto_framework.server.event.events.ClientConnectEvent;
+import net.neto_framework.server.event.events.ClientDisconnectEvent;
+import net.neto_framework.server.event.events.ClientFailedToConnectEvent;
+import net.neto_framework.server.event.events.PacketExceptionEvent;
 
 /**
- * An abstract class that allows actions to be taken when specified events are
- * called on the server.
+ * An abstract class that allows actions to be taken when specified events are called on the server.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
 public abstract class ServerEventListener {
     
     /**
-     * Fired when a new client tried to connect but failed. Reasons can include
-     * I/O Exceptions or Invalid Handshakes.
-     * 
-     * @param event ServerClientFailedToConnect
-     */
-    public void onServerClientFailedToConnect(ServerClientFailedToConnect
-            event){
-        
-    }
-
-    /**
      * Fired when a new client successfully connects to the server.
      * 
-     * @param event ServerClientConnect.
+     * @param event {@link net.neto_framework.server.event.events.ClientConnectEvent 
+     *              ClientConnectEvent}.
      */
-    public void onServerClientConnect(ServerClientConnect event) {
-
+    public void onClientConnect(ClientConnectEvent event) {
     }
-
+    
     /**
-     * Fired when the server starts.
+     * Fired when a new client tried to connect but failed (TCP Only). Reasons include IOExceptions
+     * or invalid handshakes.
      * 
-     * @param event ServerStart event.
+     * @param event {@link net.neto_framework.server.event.events.ClientFailedToConnectEvent
+     *              ClientFailedToConnectEvent}.
      */
-    public void onServerStart(ServerStart event) {
-
+    public void onClientFailedToConnect(ClientFailedToConnectEvent event){
     }
-
+    
     /**
-     * Fired when the server stops.
+     * Fired when a new client is disconnected from the server. Reasons include IOExceptions,
+     * receiving disconnect packet and client not responding to keep alive.
      * 
-     * @param event ServerStop event.
+     * @param event {@link net.neto_framework.server.event.events.ClientDisconnectEvent 
+     *              ClientDisconnectEvent}.
      */
-    public void onServerStop(ServerStop event) {
-
+    public void onClientDisconnect(ClientDisconnectEvent event) {
     }
-
+    
     /**
-     * Fired when the server receives an invalid packet id or packet.
+     * Fired when a packet exception is raised. This is usually followed by a client
+     * disconnect event firing.
      * 
-     * @param event ServerInvalidPacket event.
+     * @param event {@link net.neto_framework.server.event.events.PacketExceptionEvent
+     *              PacketExceptionEvent}
      */
-    public void onServerInvalidPacket(ServerInvalidPacket event) {
-
-    }
-
-    /**
-     * Fired when the server has a problem receiving or sending a packet.
-     * 
-     * @param event ServerPacketException.
-     */
-    public void onServerPacketException(ServerPacketException event) {
-
+    public void onPacketException(PacketExceptionEvent event) {
+        
     }
 }
