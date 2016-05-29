@@ -49,9 +49,4 @@ public interface Packet {
      * @param receiver The {@link net.neto_framework.PacketReceiver PacketReceiver}.
      */
     public void onReceive(Packet packet, PacketReceiver receiver);
-
-    /**
-     * @return Unique packet ID.
-     */
-    public int getID(); //TODO: Make the packet manager assign ID's automatically.
 }

@@ -68,8 +68,14 @@ public class ClientEvent {
      * @author BleedObsidian (Jesse Prescott)
      */
     public enum ClientEvents {
-        //TODO: Javadoc
+        /**
+         * Fired when the client is disconnected from the server.
+         */
         DISCONNECT,
+        
+        /**
+         * Fired when a packet exception is raised.
+         */
         PACKET_EXCEPTION;
     }
 
