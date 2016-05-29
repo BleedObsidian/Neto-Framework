@@ -20,7 +20,6 @@ package net.neto_framework;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 /**
  * Handles and manages all packets.
@@ -33,11 +32,6 @@ public class PacketManager {
      * HashMap of all registered packets.
      */
     private final HashMap<Integer, Packet> packets = new HashMap<>();
-    
-    /**
-     * The pool used to assign unique packet id's.
-     */
-    private int idPool = 1;
 
     /**
      * Register packet.
@@ -45,8 +39,9 @@ public class PacketManager {
      * @param packet Packet.
      */
     public void registerPacket(Packet packet) {
-        this.packets.put(this.idPool, packet);
-        this.idPool++;
+        if(!this.packets.containsKey(packet.getID())) {
+            this.packets.put(packet.getID(), packet);
+        }
     }
 
     /**
@@ -55,11 +50,8 @@ public class PacketManager {
      * @param packet Packet.
      */
     public void unregisterPacket(Packet packet) {
-        for(Entry<Integer, Packet> registeredPacket : this.packets.entrySet()) {
-            if(registeredPacket.getValue().getClass() == packet.getClass()) {
-                this.packets.remove(registeredPacket.getKey());
-                return;
-            }
+        if(this.packets.containsKey(packet.getID())) {
+            this.packets.remove(packet.getID());
         }
     }
 
@@ -81,22 +73,6 @@ public class PacketManager {
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Packet " + id + " illegal access.", e);
         }
-    }
-    
-    /**
-     * Get the ID for a given packet.
-     * 
-     * @param packet {@link net.neto_framework.Packet Packet}.
-     * @return The ID of the packet. (Returns 0 if unknown/unregistered packet).
-     */
-    public int getIdOfpacket(Packet packet) {
-        for(Entry<Integer, Packet> registeredPacket : this.packets.entrySet()) {
-            if(registeredPacket.getValue().getClass() == packet.getClass()) {
-                return registeredPacket.getKey();
-            }
-        }
-        
-        return 0;
     }
 
     /**

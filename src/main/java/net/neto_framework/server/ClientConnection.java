@@ -127,11 +127,11 @@ public class ClientConnection implements Runnable {
      */
     public void sendPacket(Packet packet) throws IOException {
         if(this.server.getProtocol() == Protocol.TCP) {
-            this.connection.sendInteger(this.server.getPacketManager().getIdOfpacket(packet));
+            this.connection.sendInteger(packet.getID());
             packet.send(this.connection);
         } else {
             this.connection.sendString(this.uuid.toString());
-            this.connection.sendInteger(this.server.getPacketManager().getIdOfpacket(packet));
+            this.connection.sendInteger(packet.getID());
             packet.send(this.connection);
             byte[] data = this.connection.getUdpData();
             
