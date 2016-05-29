@@ -21,17 +21,12 @@ package net.neto_framework.event;
 import java.util.ArrayList;
 import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
-import net.neto_framework.client.event.events.ClientFailedToConnectToServer;
-import net.neto_framework.client.event.events.ClientInvalidPacket;
-import net.neto_framework.client.event.events.ClientPacketException;
-import net.neto_framework.client.event.events.ClientServerConnect;
-import net.neto_framework.client.event.events.ClientServerDisconnect;
+import net.neto_framework.client.event.events.DisconnectEvent;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ClientConnectEvent;
 import net.neto_framework.server.event.events.ClientDisconnectEvent;
 import net.neto_framework.server.event.events.ClientFailedToConnectEvent;
-import net.neto_framework.server.event.events.PacketExceptionEvent;
 
 /**
  * Used to call and manage events for servers and clients.
@@ -47,13 +42,13 @@ public class EventHandler {
     private final ArrayList<ServerEventListener> serverEventListeners = new ArrayList<>();
     
     /**
-     * All registered ClientEvent listeners.
+     * All registered {@link net.neto_framework.client.event.ClientEventListener 
+     * ClientEventListener}.
      */
-    //TODO: Update javadoc for client events
     private final ArrayList<ClientEventListener> clientEventListeners = new ArrayList<>();
 
     /**
-     * Register ServerEventListener.
+     * Register listener.
      * 
      * @param listener {@link net.neto_framework.server.event.ServerEventListener
      *                 ServerEventListener}.
@@ -63,16 +58,17 @@ public class EventHandler {
     }
 
     /**
-     * Register ClientEventListener.
+     * Register listener.
      * 
-     * @param listener ClientEventListener.
+     * @param listener {@link net.neto_framework.client.event.ClientEventListener
+     *                 ClientEventListener}.
      */
     public void registerClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.add(listener);
     }
 
     /**
-     * Unregister ServerEventListener.
+     * Unregister listener.
      * 
      * @param listener {@link net.neto_framework.server.event.ServerEventListener
      *                 ServerEventListener}.
@@ -82,9 +78,10 @@ public class EventHandler {
     }
 
     /**
-     * Unregister ClientEventListener.
+     * Unregister listener.
      * 
-     * @param listener ClientEventListener.
+     * @param listener {@link net.neto_framework.client.event.ClientEventListener
+     *                 ClientEventListener}.
      */
     public void unregisterClientEventListener(ClientEventListener listener) {
         this.clientEventListeners.remove(listener);
@@ -114,7 +111,8 @@ public class EventHandler {
             break;
         case PACKET_EXCEPTION:
             this.serverEventListeners.stream().forEach((listener) -> {
-                listener.onPacketException((PacketExceptionEvent) event);
+                listener.onPacketException((net.neto_framework.server.event.events.
+                        PacketExceptionEvent) event);
             });
             break;
         }
@@ -123,34 +121,20 @@ public class EventHandler {
     /**
      * Call client event.
      * 
-     * @param event ClientEvent.
+     * @param event {@link net.neto_framework.client.event.ClientEvent ClientEvent}.
      */
     public void callEvent(ClientEvent event) {
         switch (event.getEvent()) {
-        case CLIENT_SERVER_CONNECT:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientServerConnect((ClientServerConnect) event);
-            }
+        case DISCONNECT:
+            this.clientEventListeners.stream().forEach((listener) -> {
+                listener.onDisconnect((DisconnectEvent) event);
+        });
             break;
-        case CLIENT_FAILED_TO_CONNECT_TO_SERVER:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientFailedToConnectToServer((ClientFailedToConnectToServer) event);
-            }
-            break;
-        case CLIENT_SERVER_DISCONNECT:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientServerDisconnect((ClientServerDisconnect) event);
-            }
-            break;
-        case CLIENT_INVALID_PACKET:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientInvalidPacket((ClientInvalidPacket) event);
-            }
-            break;
-        case CLIENT_PACKET_EXCEPTION:
-            for (ClientEventListener listener : this.clientEventListeners) {
-                listener.onClientPacketException((ClientPacketException) event);
-            }
+        case PACKET_EXCEPTION:
+            this.clientEventListeners.stream().forEach((listener) -> {
+                listener.onPacketException((net.neto_framework.client.event.events.
+                        PacketExceptionEvent) event);
+        });
             break;
         }
     }

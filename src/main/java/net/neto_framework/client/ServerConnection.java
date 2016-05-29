@@ -25,7 +25,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.PacketReceiver;
 import net.neto_framework.Protocol;
-import net.neto_framework.client.event.events.ClientPacketException;
+import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.exceptions.PacketException;
 
 /**
@@ -70,22 +70,19 @@ public class ServerConnection implements Runnable {
                         } catch (IOException e) {
                             PacketException exception = new PacketException(
                                     "Failed to read packet.", e);
-                            this.client.getEventHandler().callEvent(
-                                    new ClientPacketException(this.client,
+                            this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client,
                                             exception));
                         }
                     } else {
                         PacketException exception = new PacketException(
                                 "Invalid packet received.");
-                        this.client.getEventHandler().callEvent(
-                                new ClientPacketException(this.client,
+                        this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client,
                                         exception));
                     }
                 } catch (IOException e) {
                     PacketException exception = new PacketException(
                             "Failed to receive packet.", e);
-                    this.client.getEventHandler().callEvent(
-                            new ClientPacketException(this.client, exception));
+                    this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client, exception));
                 }
             } else {
                 byte[] data = new byte[65508];
@@ -113,27 +110,23 @@ public class ServerConnection implements Runnable {
                                 PacketException exception = new PacketException(
                                         "Failed to read packet.",
                                         e);
-                                this.client.getEventHandler().callEvent(
-                                        new ClientPacketException(this.client, 
+                                this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client, 
                                                 exception));
                             }
                         } else {
                             PacketException exception = new PacketException(
                             "Invalid packet received.");
-                            this.client.getEventHandler().callEvent(
-                            new ClientPacketException(this.client, exception));
+                            this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client, exception));
                         }
                     } else {
                         PacketException exception = new PacketException(
                             "Received UDP packet with wrong UUID.");
-                    this.client.getEventHandler().callEvent(
-                            new ClientPacketException(this.client, exception));
+                    this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client, exception));
                     }
                 } catch (IOException e) {
                     PacketException exception = new PacketException(
                             "Failed to receive packet.", e);
-                    this.client.getEventHandler().callEvent(
-                            new ClientPacketException(this.client, exception));
+                    this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client, exception));
                 }
             }
         }

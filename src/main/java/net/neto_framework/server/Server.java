@@ -107,8 +107,8 @@ public class Server {
      *                 to use.
      * @param backlog Maximum amount of connections to queue for TCP.
      */
-    public Server(PacketManager packetManager, SocketAddress address,
-            Protocol protocol, int backlog) {
+    public Server(PacketManager packetManager, SocketAddress address, Protocol protocol,
+            int backlog) {
         this.packetManager = new PacketManager();
         this.connectionHandler = new ServerConnectionHandler(this);
         this.connectionManager = new ServerConnectionManager();
@@ -129,8 +129,7 @@ public class Server {
      * @param protocol {@link net.neto_framework.Protocol Protocol} for server
      *                 to use.
      */
-    public Server(PacketManager packetManager, SocketAddress address,
-            Protocol protocol) {
+    public Server(PacketManager packetManager, SocketAddress address, Protocol protocol) {
         this.packetManager = packetManager;
         this.connectionHandler = new ServerConnectionHandler(this);
         this.connectionManager = new ServerConnectionManager();

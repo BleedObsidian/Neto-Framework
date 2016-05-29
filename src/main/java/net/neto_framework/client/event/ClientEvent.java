@@ -61,4 +61,16 @@ public class ClientEvent {
     public ClientEvents getEvent() {
         return this.event;
     }
+    
+    /**
+     * An enum that contains all registered client events.
+     * 
+     * @author BleedObsidian (Jesse Prescott)
+     */
+    public enum ClientEvents {
+        //TODO: Javadoc
+        DISCONNECT,
+        PACKET_EXCEPTION;
+    }
+
 }

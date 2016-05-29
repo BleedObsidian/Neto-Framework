@@ -19,38 +19,37 @@
 package net.neto_framework.client.event.events;
 
 import net.neto_framework.client.Client;
-import net.neto_framework.client.ServerConnection;
 import net.neto_framework.client.event.ClientEvent;
-import net.neto_framework.client.event.ClientEvents;
+import net.neto_framework.exceptions.PacketException;
 
 /**
- * An event that is fired when successfully connecting to a server.
+ * An event that is fired when the client has a problem receiving or sending a packet.
  * 
- * @author BleedObsidian (Jesse Precott)
+ * @author BleedObsidian (Jesse Prescott)
  */
-public class ClientServerConnect extends ClientEvent {
+public class PacketExceptionEvent extends ClientEvent {
     
     /**
-     * ServerConnection.
+     * PacketException thrown.
      */
-    private final ServerConnection connection;
+    private final PacketException exception;
 
     /**
-     * New ClientServerConnect event.
-     * 
-     * @param client Client.
-     * @param connection New Connection.
+     * @param client Running instance of {@link net.neto_framework.client.Client Client}.
+     * @param exception The {@link net.neto_framework.exceptions.PacketException PacketException} 
+     *                  that caused the event.
      */
-    public ClientServerConnect(Client client, ServerConnection connection) {
-        super(client, ClientEvents.CLIENT_SERVER_CONNECT);
+    public PacketExceptionEvent(Client client, PacketException exception) {
+        super(client, ClientEvents.PACKET_EXCEPTION);
 
-        this.connection = connection;
+        this.exception = exception;
     }
 
     /**
-     * @return Newly connected Connection.
+     * @return The {@link net.neto_framework.exceptions.PacketException PacketException} that caused
+     *         the event.
      */
-    public ServerConnection getServerConnection() {
-        return this.connection;
+    public PacketException getPacketException() {
+        return this.exception;
     }
 }

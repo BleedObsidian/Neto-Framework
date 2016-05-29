@@ -18,63 +18,31 @@
 
 package net.neto_framework.client.event;
 
-import net.neto_framework.client.event.events.ClientInvalidPacket;
-import net.neto_framework.client.event.events.ClientPacketException;
-import net.neto_framework.client.event.events.ClientFailedToConnectToServer;
-import net.neto_framework.client.event.events.ClientServerConnect;
-import net.neto_framework.client.event.events.ClientServerDisconnect;
+import net.neto_framework.client.event.events.DisconnectEvent;
+import net.neto_framework.client.event.events.PacketExceptionEvent;
 
 /**
- * An abstract class that allows actions to be taken when specified events are
- * called on the client.
+ * An abstract class that allows actions to be taken when specified events are called on the client.
  * 
  * @author BleedObsidian (Jesse Prescott)
  */
 public abstract class ClientEventListener {
-    /**
-     * Fired when the client successfully connects to a server.
-     * 
-     * @param event ClientServerConnect.
-     */
-    public void onClientServerConnect(ClientServerConnect event) {
-
-    }
-    
-    /**
-     * Fired when the client fails to connect to the server. Reasons include
-     * I/O errors and Invalid Handshakes.
-     * 
-     * @param event ClientFailedToConnectToServer event.
-     */
-    public void onClientFailedToConnectToServer(
-            ClientFailedToConnectToServer event) {
-
-    }
 
     /**
-     * Fired when the client disconnects from a server.
+     * Fired when the client is disconnected from the server. Reasons include IOExceptions,
+     * receiving disconnect packet and not receiving keep alive from server.
      * 
-     * @param event ClientServerConnect.
+     * @param event {@link net.neto_framework.client.event.events.DisconnectEvent DisconnectEvent}.
      */
-    public void onClientServerDisconnect(ClientServerDisconnect event) {
-
-    }
-
-    /**
-     * Fired when the client receives an invalid packet or packet id.
-     * 
-     * @param event ClientInvalidPacket.
-     */
-    public void onClientInvalidPacket(ClientInvalidPacket event) {
-
+    public void onDisconnect(DisconnectEvent event) {
     }
 
     /**
      * Fired when the client has a problem receiving or sending a packet.
      * 
-     * @param event ClientPacketException.
+     * @param event {@link net.neto_framework.client.event.events.PacketExceptionEvent
+     *              PacketExceptionEvent}.
      */
-    public void onClientPacketException(ClientPacketException event) {
-
+    public void onPacketException(PacketExceptionEvent event) {
     }
 }

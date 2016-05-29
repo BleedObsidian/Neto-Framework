@@ -46,7 +46,7 @@ public class ClientDisconnectEvent extends ServerEvent {
      * The exception that caused the client to be disconnected. This will be null if the reason is
      * not {@link ClientDisconnectReason#EXCEPTION EXCEPTION}.
      */
-    private Exception exception;
+    private final Exception exception;
 
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
@@ -55,8 +55,8 @@ public class ClientDisconnectEvent extends ServerEvent {
      * @param uuid The {@link java.util.UUID UUID} of the client that was disconnected.
      * @param exception The exception that caused the client to be disconnected.
      */
-    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason,
-            UUID uuid, Exception exception) {
+    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid,
+            Exception exception) {
         super(server, Event.CLIENT_DISCONNECT);
 
         this.reason = reason;
@@ -70,12 +70,12 @@ public class ClientDisconnectEvent extends ServerEvent {
      *               disconnected.
      * @param uuid The {@link java.util.UUID UUID} of the client that was disconnected.
      */
-    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason,
-            UUID uuid) {
+    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid) {
         super(server, Event.CLIENT_DISCONNECT);
 
         this.reason = reason;
         this.uuid = uuid;
+        this.exception = null;
     }
 
     /**
@@ -117,11 +117,13 @@ public class ClientDisconnectEvent extends ServerEvent {
          * ClientDisconnectEvent}.
          */
         EXCEPTION,
+        
         /**
          * Client sent a disconnect packet. This is sent when a client chooses to disconnect 
          * cleanly.
          */
         DISCONNECT_PACKET,
+        
         /**
          * Client did not respond to keep alive in the given time frame. This is common for a UDP
          * connection if a disconnect packet was not received.

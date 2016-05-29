@@ -44,7 +44,7 @@ public class SocketAddress {
      * Use localhost and given port.
      * 
      * @param port Port number. (Max: 65535)
-     * @throws SocketAddressException if fails to create SocketAddress.
+     * @throws net.neto_framework.address.exceptions.SocketAddressException
      */
     public SocketAddress(int port) throws SocketAddressException {
         try {
@@ -66,7 +66,7 @@ public class SocketAddress {
      * 
      * @param host Host name. (Can be an IP address or machine name)
      * @param port Port number. (Max: 65535)
-     * @throws SocketAddressException If fails to get the address of given host.
+     * @throws net.neto_framework.address.exceptions.SocketAddressException
      */
     public SocketAddress(String host, int port) throws SocketAddressException {
         try {
@@ -89,7 +89,7 @@ public class SocketAddress {
      * 
      * @param address Raw IP address in network byte order .
      * @param port Port number. (Max: 65535)
-     * @throws SocketAddressException If fails to get the address of given host.
+     * @throws net.neto_framework.address.exceptions.SocketAddressException
      */
     public SocketAddress(byte[] address, int port)
             throws SocketAddressException {

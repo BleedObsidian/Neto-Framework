@@ -31,12 +31,17 @@ public class ClientConnectException extends Exception {
     private static final long serialVersionUID = -3838357620542778348L;
 
     /**
-     * New ClientConnectException with cause exception.
-     * 
      * @param message Reason for exception.
      * @param exception Cause exception.
      */
     public ClientConnectException(String message, Exception exception) {
         super(message, exception);
+    }
+    
+    /**
+     * @param message Reason for exception.
+     */
+    public ClientConnectException(String message) {
+        super(message);
     }
 }
