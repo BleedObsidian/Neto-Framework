@@ -29,8 +29,12 @@ import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
+import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
+import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.packets.HandshakePacket;
+import net.neto_framework.packets.HandshakeResponsePacket;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -53,11 +57,6 @@ public class Client {
      * The {@link net.neto_framework.address.SocketAddress} to connect to.
      */
     private final SocketAddress address;
-    
-    /**
-     * The {@link net.neto_framework.Protocol Protocol} to use.
-     */
-    private final Protocol protocol;
 
     /**
      * TCP Socket.
@@ -77,7 +76,7 @@ public class Client {
     /**
      * If client is connected to a Server.
      */
-    private boolean isConnected;
+    private volatile boolean isConnected;
     
     /**
      * UUID given by server.
@@ -85,16 +84,16 @@ public class Client {
     private UUID uuid;
 
     /**
-     * @param packetManager The {@link net.neto_framework.PacketManager PacketManager}.
      * @param address The {@link net.neto_framework.address.SocketAddress SocketAddress} to connect
      *                to.
-     * @param protocol {@link net.neto_framework.Protocol Protocol}.
      */
-    public Client(PacketManager packetManager, SocketAddress address, Protocol protocol) {
-        this.packetManager = packetManager;
+    public Client(SocketAddress address) {
+        this.packetManager = new PacketManager();
+        this.packetManager.registerPacket(HandshakePacket.class);
+        this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        
         this.eventHandler = new EventHandler();
         this.address = address;
-        this.protocol = protocol;
     }
 
     /**
@@ -104,114 +103,119 @@ public class Client {
      */
     public void connect() throws ClientConnectException {
         if (!this.isConnected) {
-            if (this.protocol == Protocol.TCP) {
-                try {
-                    this.tcpSocket = new Socket(this.address.getInetAddress(), 
-                            this.address.getPort());
-                    this.isConnected = true;
-                } catch (IOException e) {
-                    throw new ClientConnectException(
-                            "Failed to connect to given SocketAddress", e);
-                }
-
-                try {
-                    this.tcpSocket.getOutputStream().write(Connection.MAGIC_STRING.getBytes());
-                } catch (IOException e) {
-                    throw new ClientConnectException(
-                            "Failed to send handshake packet.", e);
-                }
-
-                byte[] magicStringBuffer = new byte[Connection.MAGIC_STRING.getBytes().length];
-                    
-                try {
-                    this.tcpSocket.getInputStream().read(magicStringBuffer);
-                } catch (IOException e) {
-                    throw new ClientConnectException(
-                            "Failed to receive handshake packet", e);
-                }
-                    
-                String sentMagicString = new String(magicStringBuffer);
-
-                if (sentMagicString.equals(Connection.MAGIC_STRING)) {
-                    this.serverConnection = new ServerConnection(this, new Connection(this.tcpSocket));
-                    this.isConnected = true;
-                    (new Thread(this.serverConnection)).start();
-                } else {
-                    throw new ClientConnectException("Received invalid handshake from server");
-                }
-            } else if (this.protocol == Protocol.UDP) {
-                try {
-                    this.udpSocket = new DatagramSocket();
-                } catch (SocketException e) {
-                    throw new ClientConnectException("Failed to create UDP socket", e);
-                }
-
-                try {
-                    Connection connection = new Connection(this.udpSocket,
-                            this.address.getInetAddress(), this.address.getPort());
-                    connection.sendString(Connection.MAGIC_STRING);
-                    
-                    byte[] handshake = connection.getUdpData();
-                    DatagramPacket handshakePacket = new DatagramPacket(handshake, handshake.length, 
-                            this.address.getInetAddress(), this.address.getPort());
-                    
-                    this.udpSocket.send(handshakePacket);
-                    
-                    byte[] data = new byte[65508];
-                    DatagramPacket receiveHandshakePacket = new DatagramPacket(
-                            data, data.length);
-                    
-                    this.udpSocket.receive(receiveHandshakePacket);
-                    
-                    connection.setUdpDataInputStream(new ByteArrayInputStream(data));
-                    
-                    this.uuid = UUID.fromString(connection.receiveString());
-
-                    this.serverConnection = new ServerConnection(this, connection);
-                    this.isConnected = true;
-                    (new Thread(this.serverConnection)).start();
-                    
-                } catch (IOException e) {
-                    throw new ClientConnectException("Failed to send/receive handshake packet", e);
-                }
+            try {
+                this.tcpSocket = new Socket(this.address.getInetAddress(), 
+                        this.address.getPort());
+                this.isConnected = true;
+            } catch (IOException e) {
+                throw new ClientConnectException("Failed to connect to given SocketAddress.", e);
             }
+
+            try {
+                this.udpSocket = new DatagramSocket();
+            } catch (SocketException e) {
+                this.disconnect();
+                throw new ClientConnectException("Failed to create UDP socket.", e);
+            }
+
+            Connection tcpConnection = new Connection(this.tcpSocket);
+            Connection udpConnection = new Connection(this.udpSocket,
+                    this.address.getInetAddress(), this.address.getPort());
+
+            this.serverConnection = new ServerConnection(this, tcpConnection, udpConnection);
+            this.isConnected = true;
+            (new Thread(this.serverConnection)).start();
+            
+            try {
+                HandshakePacket packet = new HandshakePacket();
+                packet.setUdpPort(this.udpSocket.getLocalPort());
+                this.serverConnection.sendPacket(packet, Protocol.TCP);
+            } catch (IOException e) {
+                this.disconnect();
+                throw new ClientConnectException("Failed to send handshake packet.", e);
+            }
+            
+            (new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while(Client.this.isConnected) {
+                        byte[] data = new byte[65508];
+                        DatagramPacket dataPacket = new DatagramPacket(data, data.length);
+
+                        try {
+                            Client.this.udpSocket.receive(dataPacket);
+
+                            Connection connection = new Connection(udpSocket,
+                                    dataPacket.getAddress(), dataPacket.getPort());
+
+                            ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
+                            connection.setUdpDataInputStream(inputStream);
+                            int packetId = connection.receiveInteger();
+                            UUID uuid = UUID.fromString(connection.receiveString());
+
+                            if(!Client.this.packetManager.hasPacket(packetId)) {
+                                PacketException exception = new PacketException("Unkown packet"
+                                        + " received.");
+                                PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
+                                        exception);
+                                Client.this.eventHandler.callEvent(event);
+                            }
+
+                            if(Client.this.uuid.equals(uuid)) {
+                                Client.this.serverConnection.getUDPConnection().
+                                        setUdpDataInputStream(inputStream);
+                                Client.this.packetManager.receive(Client.this, packetId,
+                                        Client.this.serverConnection, Protocol.UDP);
+                            } else {
+                                PacketException exception = new PacketException("UUID does not "
+                                        + "match on received packet.");
+                                PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
+                                        exception);
+                                Client.this.eventHandler.callEvent(event);
+                            }
+                        } catch (IOException e) {
+                            PacketException exception = new PacketException("Failed to read "
+                                    + "packet.", e);
+                            PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
+                                    exception);
+                            Client.this.eventHandler.callEvent(event);
+                        }
+                    }
+                }
+            })).start();
         }
     }
 
     /**
-     * Attempt to close serverConnection.
-     * 
-     * @throws net.neto_framework.client.exceptions.ClientConnectException If failed to close
-     *         cleanly.
+     * Attempt to close connection to server.
      */
-    public void disconnect() throws ClientConnectException {
+    public void disconnect() {
         if (this.isConnected) {
-            if (this.protocol == Protocol.TCP) {
-                try {
-                    this.tcpSocket.close();
-                    this.isConnected = false;
-                } catch (IOException e) {
-                    throw new ClientConnectException(
-                            "Failed to close TCP connection.", e);
-                }
-            } else if (this.protocol == Protocol.UDP) {
+            try {
+                this.tcpSocket.close();
+            } catch (IOException e) {} //TODO: Log
+
+            if(this.udpSocket != null) {
                 this.udpSocket.close();
-                this.isConnected = false;
             }
+            
+            //TODO: Send disconnect packet.
+            
+            this.isConnected = false;
         }
     }
 
     /**
      * @return {@link net.neto_framework.PacketManager PacketManager}.
      */
-    public synchronized PacketManager getPacketManager() {
+    public PacketManager getPacketManager() {
         return this.packetManager;
     }
 
     /**
      * @return {@link net.neto_framework.event.EventHandler EventHandler}.
      */
-    public synchronized EventHandler getEventHandler() {
+    public EventHandler getEventHandler() {
         return this.eventHandler;
     }
 
@@ -223,17 +227,10 @@ public class Client {
     }
 
     /**
-     * @return {@link net.neto_framework.Protocol Protocol} the client is using.
-     */
-    public synchronized Protocol getProtocol() {
-        return this.protocol;
-    }
-
-    /**
      * @return TCP Socket. (Null if not using TCP as protocol or if the client
      *         is not connected.)
      */
-    public synchronized Socket getTcpSocket() {
+    public Socket getTcpSocket() {
         return this.tcpSocket;
     }
 
@@ -241,28 +238,35 @@ public class Client {
      * @return UDP Socket. (Null if not using UDP as protocol or if the client
      *         is not connected.)
      */
-    public synchronized DatagramSocket getUdpSocket() {
+    public DatagramSocket getUdpSocket() {
         return this.udpSocket;
     }
 
     /**
      * @return {@link net.neto_framework.client.ServerConnection ServerConnection}.
      */
-    public synchronized ServerConnection getServerConnection() {
+    public ServerConnection getServerConnection() {
         return this.serverConnection;
     }
 
     /**
      * @return If client is currently connected to a server.
      */
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
         return this.isConnected;
     }
     
     /**
      * @return UUID given by server.
      */
-    public synchronized UUID getUUID() {
+    public UUID getUUID() {
         return this.uuid;
+    }
+    
+    /**
+     * @param uuid UUID.
+     */
+    public void setUUID(UUID uuid) {
+        this.uuid = uuid;
     }
 }

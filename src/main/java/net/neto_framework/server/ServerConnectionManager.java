@@ -18,12 +18,12 @@
 
 package net.neto_framework.server;
 
-import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import net.neto_framework.Connection;
+import net.neto_framework.server.event.events.ClientConnectEvent;
 
 /**
  * A manager to take care of all client connections.
@@ -33,29 +33,28 @@ import net.neto_framework.Connection;
 public class ServerConnectionManager {
     
     /**
-     * A hashmap of all connected {@link 
-     * net.neto_framework.server.ClientConnection ClientConnections} and their
-     * UUID as keys.
+     * Running instance of {@link net.neto_framework.server.Server Server}.
      */
-    private volatile HashMap<UUID, ClientConnection> connections = 
-            new HashMap<>();
-
+    private final Server server;
+    
     /**
-     * Add given clientConnection into pool.
-     * 
-     * @param server Running instance of {@link net.neto_framework.server.Server
-     *               Server}.
-     * @param connection The {@link net.neto_framework.Connection Connection}.
-     * @return {@link net.neto_framework.server.ClientConnection ClientConnection}.
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
      */
-    public ClientConnection addClientConnection(Server server, Connection connection) {
-        UUID uuid = UUID.randomUUID();
-        ClientConnection clientConnection = new ClientConnection(server, uuid, connection);
-        this.connections.put(uuid, clientConnection);
-        (new Thread(clientConnection)).start();
-
-        return clientConnection;
+    public ServerConnectionManager(Server server) {
+        this.server = server;
     }
+    
+    /**
+     * A hashmap of all connected {@link net.neto_framework.server.ClientConnection
+     * ClientConnections} and their UUID as keys.
+     */
+    private volatile HashMap<UUID, ClientConnection> connections = new HashMap<>();
+    
+    /**
+     * A hashmap of all connected {@link net.neto_framework.server.ClientConnection
+     * ClientConnections} in the handshake process.
+     */
+    private volatile HashMap<UUID, ClientConnection> pendingConnections = new HashMap<>();
     
     /**
      * Add given TCP clientConnection into pool.
@@ -67,31 +66,26 @@ public class ServerConnectionManager {
      */
     public ClientConnection addClientConnection(Server server, Socket socket) {
         UUID uuid = UUID.randomUUID();
-        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(
-                socket));
-        this.connections.put(uuid, clientConnection);
+        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(socket));
+        this.pendingConnections.put(uuid, clientConnection);
         (new Thread(clientConnection)).start();
 
         return clientConnection;
     }
-
+    
     /**
-     * Add given UDP clientConnection into pool.
+     * Called by a {@link net.neto_framework.packets.HandshakePacket HandshakePacket} when a client
+     * has completed the handshake process.
      * 
-     * @param server Running instance of {@link net.neto_framework.server.Server
-     *               Server}.
-     * @param address InetAddress of new UDP clientConnection.
-     * @param port Port number of new UDP clientConnection.
-     * @return {@link net.neto_framework.server.ClientConnection ClientConnection}.
+     * @param uuid UUID of client.
      */
-    public ClientConnection addClientConnection(Server server, InetAddress address, int port) {
-        UUID uuid = UUID.randomUUID();
-        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(
-                server.getUdpSocket(), address, port));
-        this.connections.put(uuid, clientConnection);
-        (new Thread(clientConnection)).start();
-
-        return clientConnection;
+    public void onConnectionValidated(UUID uuid) {
+        ClientConnection client = this.pendingConnections.get(uuid);
+        this.connections.put(uuid, client);
+        this.pendingConnections.remove(uuid);
+        
+        ClientConnectEvent event = new ClientConnectEvent(this.server, client);
+        this.server.getEventHandler().callEvent(event);
     }
 
     /**
@@ -101,6 +95,7 @@ public class ServerConnectionManager {
      */
     public void removeClientConnection(UUID uuid) {
         this.connections.remove(uuid);
+        this.pendingConnections.remove(uuid);
     }
 
     /**

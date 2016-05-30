@@ -20,6 +20,10 @@ package net.neto_framework;
 
 import java.io.IOException;
 import java.util.HashMap;
+import net.neto_framework.client.Client;
+import net.neto_framework.client.ServerConnection;
+import net.neto_framework.server.ClientConnection;
+import net.neto_framework.server.Server;
 
 /**
  * Handles and manages all packets.
@@ -36,11 +40,23 @@ public class PacketManager {
     /**
      * Register packet.
      * 
-     * @param packet Packet.
+     * @param packetClass Packet class.
      */
-    public void registerPacket(Packet packet) {
-        if(!this.packets.containsKey(packet.getID())) {
-            this.packets.put(packet.getID(), packet);
+    public void registerPacket(Class packetClass) {
+        
+        Packet packet;
+        try {
+            packet = (Packet) packetClass.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Packet class has a constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Packet illegal access.", e);
+        }
+        
+        if(!this.packets.containsKey(packet.getId())) {
+            this.packets.put(packet.getId(), packet);
+        } else {
+            throw new RuntimeException("Packet ID is already being used or reserved.");
         }
     }
 
@@ -50,24 +66,62 @@ public class PacketManager {
      * @param packet Packet.
      */
     public void unregisterPacket(Packet packet) {
-        if(this.packets.containsKey(packet.getID())) {
-            this.packets.remove(packet.getID());
+        if(this.packets.containsKey(packet.getId())) {
+            this.packets.remove(packet.getId());
         }
     }
 
     /**
-     * Receive packet.
+     * Receive packet server-side.
      * 
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
      * @param id Packet ID.
-     * @param connection Connection.
-     * @param receiver PacketReceiver.
+     * @param client The {@link net.neto_framework.server.ClientConnection ClientConnection} that
+     *               the packet is from.
+     * @param protocol The {@link net.neto_framework.Protocol Protocol} the packet is in.
      * @throws IOException If fails to receive packet.
      */
-    public void receive(int id, Connection connection, PacketReceiver receiver) throws IOException {
+    public void receive(Server server, int id, ClientConnection client, Protocol protocol)
+            throws IOException {
         try {
             Packet packet = this.packets.get(id).getClass().newInstance();
-            packet.receive(connection);
-            packet.onReceive(packet, receiver);
+            
+            if(protocol == Protocol.TCP) {
+                packet.receive(client.getTCPConnection());
+            } else {
+                packet.receive(client.getUDPConnection());
+            }
+            
+            packet.onServerReceive(server, client, packet);
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Packet " + id + " class has a constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Packet " + id + " illegal access.", e);
+        }
+    }
+    
+    /**
+     * Receive packet server-side.
+     * 
+     * @param client Running instance of {@link net.neto_framework.client.Client Client}.
+     * @param id Packet ID.
+     * @param serverConnection The {@link net.neto_framework.client.ServerConnection
+     *                         ServerConnection}.
+     * @param protocol The {@link net.neto_framework.Protocol Protocol} the packet is in.
+     * @throws IOException If fails to receive packet.
+     */
+    public void receive(Client client, int id, ServerConnection serverConnection, Protocol protocol)
+            throws IOException {
+        try {
+            Packet packet = this.packets.get(id).getClass().newInstance();
+            
+            if(protocol == Protocol.TCP) {
+                packet.receive(serverConnection.getTCPConnection());
+            } else {
+                packet.receive(serverConnection.getUDPConnection());
+            }
+            
+            packet.onClientReceive(client, serverConnection, packet);
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {

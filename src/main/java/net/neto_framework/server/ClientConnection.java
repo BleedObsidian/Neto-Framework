@@ -23,9 +23,9 @@ import java.net.DatagramPacket;
 import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
-import net.neto_framework.PacketReceiver;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.server.event.events.ClientDisconnectEvent;
 import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
 import net.neto_framework.server.event.events.PacketExceptionEvent;
@@ -48,9 +48,14 @@ public class ClientConnection implements Runnable {
     private final Server server;
     
     /**
-     * Connection.
+     * TCP connection.
      */
-    private final Connection connection;
+    private Connection tcpConnection;
+    
+    /**
+     * UDP connection.
+     */
+    private Connection udpConnection;
     
     /**
      * If the client is currently connected.
@@ -60,24 +65,39 @@ public class ClientConnection implements Runnable {
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
      * @param uuid UUID of client.
-     * @param connection {@link net.neto_framework.Connection Connection}.
+     * @param tcpConnection TCP {@link net.neto_framework.Connection Connection}.
      */
-    public ClientConnection(Server server, UUID uuid, Connection connection) {
+    public ClientConnection(Server server, UUID uuid, Connection tcpConnection) {
         this.server = server;
         this.uuid = uuid;
-        this.connection = connection;
+        this.tcpConnection = tcpConnection;
         this.isConnected = true;
     }
 
     @Override
     public void run() {
-        while (this.server.isRunning() && this.server.getProtocol() == Protocol.TCP &&
-                this.isConnected) {
+        while (this.server.isRunning() && this.isConnected) {
             int packetId;
+            String uuidString;
             try {
-                packetId = this.connection.receiveInteger();
+                packetId = this.tcpConnection.receiveInteger();
+                uuidString = this.tcpConnection.receiveString();
             } catch (IOException e) {
                 PacketException exception = new PacketException("Failed to read packet.", e);
+                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
+                        this.uuid);
+                this.server.getEventHandler().callEvent(packetEvent);
+                
+                this.disconnect();
+                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                this.server.getEventHandler().callEvent(event);
+                break;
+            }
+            
+            if(!this.uuid.toString().equals(uuidString) &&
+                    packetId != (new HandshakePacket()).getId()) {
+                PacketException exception = new PacketException("UUID does not match.");
                 PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
                         this.uuid);
                 this.server.getEventHandler().callEvent(packetEvent);
@@ -91,8 +111,8 @@ public class ClientConnection implements Runnable {
                 
             if (this.server.getPacketManager().hasPacket(packetId)) {
                 try {
-                    this.server.getPacketManager().receive(packetId, 
-                            this.connection, PacketReceiver.SERVER);
+                    this.server.getPacketManager().receive(this.server, packetId, this,
+                            Protocol.TCP);
                 } catch (IOException e) {
                     PacketException exception = new PacketException("Failed to read packet.", e);
                     this.server.getEventHandler().callEvent(new PacketExceptionEvent(this.server, 
@@ -122,40 +142,51 @@ public class ClientConnection implements Runnable {
     /**
      * Send client packet.
      * 
-     * @param packet Packet.
+     * @param packet The {@link net.neto_framework.Packet Packet} to send.
+     * @param protocol What {@link net.neto_framework.Protocol Protocol} to use when sending.
      * @throws IOException If fails to send packet.
      */
-    public void sendPacket(Packet packet) throws IOException {
-        if(this.server.getProtocol() == Protocol.TCP) {
-            this.connection.sendInteger(packet.getID());
-            packet.send(this.connection);
+    public void sendPacket(Packet packet, Protocol protocol) throws IOException {
+        if(this.server.getPacketManager().hasPacket(packet.getId())) {
+            if(protocol == Protocol.TCP) {
+                this.tcpConnection.sendInteger(packet.getId());
+                this.tcpConnection.sendString(this.uuid.toString());
+                packet.send(this.tcpConnection);
+            } else {
+                this.udpConnection.sendInteger(packet.getId());
+                this.udpConnection.sendString(this.uuid.toString());
+                packet.send(this.udpConnection);
+                byte[] data = this.udpConnection.getUdpData();
+
+                DatagramPacket dataPacket = new DatagramPacket(data, data.length,
+                        this.udpConnection.getAddress(), this.udpConnection.getPort());
+                this.server.getUdpSocket().send(dataPacket);
+            }
         } else {
-            this.connection.sendString(this.uuid.toString());
-            this.connection.sendInteger(packet.getID());
-            packet.send(this.connection);
-            byte[] data = this.connection.getUdpData();
-            
-            DatagramPacket dataPacket = new DatagramPacket(data, data.length,
-                    this.connection.getAddress(), this.connection.getPort());
-            this.server.getUdpSocket().send(dataPacket);
+            throw new RuntimeException("Attempt to send unregistered packet.");
         }
+    }
+    
+    /**
+     * Add the UDP connection of client. This can be used when a handshake packet is received
+     * telling the server what port to communicate to the client with.
+     * 
+     * @param udpConnection UDP {@link net.neto_framework.Connection Connection}.
+     */
+    public void addUdpConnection(Connection udpConnection) {
+        this.udpConnection = udpConnection;
     }
     
     /**
      * Disconnect client from the server.
      */
     public void disconnect() {
-        if(this.server.getProtocol() == Protocol.TCP) {
-            this.isConnected = false;
-            this.server.getConnectionManager().removeClientConnection(this.uuid);
-                
-            try {
-                this.connection.getTCPSocket().close();
-            } catch (IOException e) { } //TODO: Log
-        } else {
-            this.isConnected = false;
-            this.server.getConnectionManager().removeClientConnection(this.uuid);
-        }
+        try {
+            this.tcpConnection.getTCPSocket().close();
+        } catch (IOException e) { } //TODO: Log
+
+        this.server.getConnectionManager().removeClientConnection(this.uuid);
+        this.isConnected = false;
         
         //TODO: Send disconnect packet to client.
     }
@@ -168,9 +199,16 @@ public class ClientConnection implements Runnable {
     }
 
     /**
-     * @return Connection.
+     * @return TCP {@link net.neto_framework.Connection Connection}.
      */
-    public Connection getConnection() {
-        return this.connection;
+    public Connection getTCPConnection() {
+        return this.tcpConnection;
+    }
+    
+    /**
+     * @return UDP {@link net.neto_framework.Connection Connection}.
+     */
+    public Connection getUDPConnection() {
+        return this.udpConnection;
     }
 }

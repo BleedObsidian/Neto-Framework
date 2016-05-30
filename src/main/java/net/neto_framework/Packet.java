@@ -19,6 +19,10 @@
 package net.neto_framework;
 
 import java.io.IOException;
+import net.neto_framework.client.Client;
+import net.neto_framework.client.ServerConnection;
+import net.neto_framework.server.ClientConnection;
+import net.neto_framework.server.Server;
 
 /**
  * A packet interface that can be sent and received to and from connections.
@@ -33,7 +37,7 @@ public interface Packet {
      * @throws java.io.IOException
      */
     public void send(Connection connection) throws IOException;
-
+    
     /**
      * Receive packet from connection.
      * 
@@ -43,15 +47,27 @@ public interface Packet {
     public void receive(Connection connection) throws IOException;
 
     /**
-     * Fired when this packet is received.
+     * Fired when this packet is received server-side.
      * 
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
+     * @param clientConnection The {@link net.neto_framework.server.ClientConnection
+     *                         ClientConnection}.
      * @param packet The {@link net.neto_framework.Packet Packet} instance.
-     * @param receiver The {@link net.neto_framework.PacketReceiver PacketReceiver}.
      */
-    public void onReceive(Packet packet, PacketReceiver receiver);
+    public void onServerReceive(Server server, ClientConnection clientConnection, Packet packet);
+    
+    /**
+     * Fired when this packet is received client-side.
+     * 
+     * @param client Running instance of {@link net.neto_framework.client.Client Client}.
+     * @param serverConnection The {@link net.neto_framework.client.ServerConnection
+     *                         ServerConnection}.
+     * @param packet The {@link net.neto_framework.Packet Packet} instance.
+     */
+    public void onClientReceive(Client client, ServerConnection serverConnection, Packet packet);
 
     /**
      * @return Unique packet ID.
      */
-    public int getID(); //TODO: Make the packet manager assign ID's automatically.
+    public int getId();
 }

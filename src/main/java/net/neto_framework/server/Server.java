@@ -26,6 +26,8 @@ import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
+import net.neto_framework.packets.HandshakePacket;
+import net.neto_framework.packets.HandshakeResponsePacket;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -51,10 +53,16 @@ public class Server {
     private final PacketManager packetManager;
 
     /**
-     * The {@link net.neto_framework.server.ServerConnectionHandler 
-     * ServerConnectionHandler}.
+     * The {@link net.neto_framework.server.ServerTCPConnectionHandler 
+     * ServerTCPConnectionHandler}.
      */
-    private final ServerConnectionHandler connectionHandler;
+    private final ServerTCPConnectionHandler tcpConnectionHandler;
+    
+    /**
+     * The {@link net.neto_framework.server.ServerUDPConnectionHandler 
+     * ServerUDPConnectionHandler}.
+     */
+    private final ServerUDPConnectionHandler udpConnectionHandler;
     
     /**
      * The {@link net.neto_framework.server.ServerConnectionManager
@@ -74,11 +82,6 @@ public class Server {
     private final SocketAddress address;
     
     /**
-     * The {@link net.neto_framework.Protocol Protocol} the server is using.
-     */
-    private final Protocol protocol;
-    
-    /**
      * The TCP backlog value.
      */
     private final int backlog;
@@ -96,48 +99,44 @@ public class Server {
     /**
      * If the server is currently running.
      */
-    private boolean isRunning;
+    private volatile boolean isRunning;
 
     /**
-     * @param packetManager The {@link net.neto_framework.PacketManager
-     *                      PacketManager}.
      * @param address {@link net.neto_framework.address.SocketAddress
      *                SocketAddress} for server to bind to.
-     * @param protocol {@link net.neto_framework.Protocol Protocol} for server
-     *                 to use.
-     * @param backlog Maximum amount of connections to queue for TCP.
+     * @param backlog Maximum amount of connections to queue.
      */
-    public Server(PacketManager packetManager, SocketAddress address, Protocol protocol,
-            int backlog) {
+    public Server(SocketAddress address, int backlog) {
         this.packetManager = new PacketManager();
-        this.connectionHandler = new ServerConnectionHandler(this);
-        this.connectionManager = new ServerConnectionManager();
-
+        this.packetManager.registerPacket(HandshakePacket.class);
+        this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        
+        this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
+        this.udpConnectionHandler = new ServerUDPConnectionHandler(this);
+        
+        this.connectionManager = new ServerConnectionManager(this);
         this.eventHandler = new EventHandler();
 
         this.address = address;
-        this.protocol = protocol;
         this.backlog = backlog;
-        //TODO: Only choose protocol when sending a packet. Only do handhshake process in TCP.
     }
 
     /**
-     * @param packetManager The {@link net.neto_framework.PacketManager
-     *                      PacketManager}.
      * @param address {@link net.neto_framework.address.SocketAddress
      *                SocketAddress} for server to bind to.
-     * @param protocol {@link net.neto_framework.Protocol Protocol} for server
-     *                 to use.
      */
-    public Server(PacketManager packetManager, SocketAddress address, Protocol protocol) {
-        this.packetManager = packetManager;
-        this.connectionHandler = new ServerConnectionHandler(this);
-        this.connectionManager = new ServerConnectionManager();
-
+    public Server(SocketAddress address) {
+        this.packetManager = new PacketManager();
+        this.packetManager.registerPacket(HandshakePacket.class);
+        this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        
+        this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
+        this.udpConnectionHandler = new ServerUDPConnectionHandler(this);
+        
+        this.connectionManager = new ServerConnectionManager(this);
         this.eventHandler = new EventHandler();
 
         this.address = address;
-        this.protocol = protocol;
         this.backlog = Server.DEFAULT_BACKLOG;
     }
 
@@ -149,31 +148,23 @@ public class Server {
      */
     public void start() throws ServerException {
         if (!this.isRunning) {
-            if (this.protocol == Protocol.TCP) {
-                try {
-                    this.tcpSocket = new ServerSocket(this.address.getPort(),
-                            this.backlog, this.address.getInetAddress());
-
-                    (new Thread(this.connectionHandler)).start();
-
-                    this.isRunning = true;
-                } catch (IOException e) {
-                    throw new ServerException(
-                            "Failed to start server on given address.", e);
-                }
-            } else if (this.protocol == Protocol.UDP) {
-                try {
-                    this.udpSocket = new DatagramSocket(this.address.getPort(),
-                            this.address.getInetAddress());
-
-                    (new Thread(this.connectionHandler)).start();
-
-                    this.isRunning = true;
-                } catch (SocketException e) {
-                    throw new ServerException(
-                            "Failed to start server on given address.", e);
-                }
+            try {
+                this.tcpSocket = new ServerSocket(this.address.getPort(),
+                        this.backlog, this.address.getInetAddress());
+            } catch (IOException e) {
+                throw new ServerException("Failed to start server on given address.", e);
             }
+
+            try {
+                this.udpSocket = new DatagramSocket(this.address.getPort(),
+                        this.address.getInetAddress());
+            } catch (SocketException e) {
+                throw new ServerException("Failed to start server on given address.", e);
+            }
+            
+            (new Thread(this.tcpConnectionHandler)).start();
+            (new Thread(this.udpConnectionHandler)).start();
+            this.isRunning = true;
         }
     }
 
@@ -185,20 +176,14 @@ public class Server {
      */
     public void stop() throws ServerException {
         if (this.isRunning) {
-            if (this.protocol == Protocol.TCP) {
-                try {
-                    this.tcpSocket.close();
-
-                    this.isRunning = false;
-                } catch (IOException e) {
-                    throw new ServerException("Failed to close server socket.",
-                            e);
-                }
-            } else if (this.protocol == Protocol.UDP) {
-                this.udpSocket.close();
-
-                this.isRunning = false;
+            try {
+                this.tcpSocket.close();
+            } catch (IOException e) {
+                throw new ServerException("Failed to close server socket.", e);
             }
+
+            this.udpSocket.close();
+            this.isRunning = false;
         }
     }
 
@@ -222,13 +207,6 @@ public class Server {
      */
     public SocketAddress getAddress() {
         return this.address;
-    }
-
-    /**
-     * @return {@link net.neto_framework.Protocol Protocol} the server is using.
-     */
-    public synchronized Protocol getProtocol() {
-        return this.protocol;
     }
 
     /**

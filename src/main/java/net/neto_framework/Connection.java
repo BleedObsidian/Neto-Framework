@@ -38,11 +38,6 @@ public final class Connection {
      * connection is also using the Neto-Framework.
      */
     public static String MAGIC_STRING = "SDLJhs34jlDdj89";
-    
-    /**
-     * Protocol that connection is using.
-     */
-    private final Protocol protocol;
 
     /**
      * TCP Socket of connection.
@@ -65,6 +60,11 @@ public final class Connection {
     private final int port;
     
     /**
+     * The protocol this connection is using.
+     */
+    private Protocol protocol;
+    
+    /**
      * The stream to read data from when using UDP.
      */
     private ByteArrayInputStream udpDataInputStream;
@@ -75,9 +75,7 @@ public final class Connection {
     private ByteArrayOutputStream udpDataOutputStream;
 
     /**
-     * New TCP Connection.
-     * 
-     * @param socket TCP Socket.
+     * @param socket {@link java.net.Socket Socket}.
      */
     public Connection(Socket socket) {
         this.protocol = Protocol.TCP;
@@ -88,13 +86,11 @@ public final class Connection {
         this.address = null;
         this.port = 0;
     }
-
+    
     /**
-     * New UDP Connection.
-     * 
-     * @param udpSocket UDP Socket.
-     * @param address UDP InetAddress.
-     * @param port Port number.
+     * @param udpSocket {@link java.net.DatagramSocket DatagramSocket}.
+     * @param address {@link java.net.InetAddress InetAddress} of client.
+     * @param port UDP port number the client is communicating on.
      */
     public Connection(DatagramSocket udpSocket, InetAddress address, int port) {
         this.protocol = Protocol.UDP;
