@@ -81,9 +81,13 @@ public class ServerUDPConnectionHandler extends Thread {
                     this.server.getEventHandler().callEvent(event);
                 }
             } catch (IOException e) {
-                PacketException exception = new PacketException("Failed to read packet.", e);
-                PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
-                this.server.getEventHandler().callEvent(event);
+                if(!this.server.getUdpSocket().isClosed()) {
+                    PacketException exception = new PacketException("Failed to read packet.", e);
+                    PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
+                    this.server.getEventHandler().callEvent(event);
+                } else {
+                    break;
+                }
             }
         }
     }

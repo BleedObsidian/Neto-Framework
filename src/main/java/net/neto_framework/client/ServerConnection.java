@@ -102,10 +102,13 @@ public class ServerConnection implements Runnable {
                     break;
                 }
             } catch (IOException e) {
-                PacketException exception = new PacketException(
-                        "Failed to receive packet.", e);
-                this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client,
-                        exception));
+                if(!this.client.getTcpSocket().isClosed()) {
+                    PacketException exception = new PacketException(
+                            "Failed to receive packet.", e);
+                    this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client,
+                            exception));
+                }
+                
                 break;
             }
         }
@@ -118,7 +121,7 @@ public class ServerConnection implements Runnable {
      * @param protocol What {@link net.neto_framework.Protocol Protocol} to use when sending.
      * @throws IOException If fails to send packet.
      */
-    public void sendPacket(Packet packet, Protocol protocol) throws IOException {
+    public synchronized void sendPacket(Packet packet, Protocol protocol) throws IOException {
         if(this.client.getPacketManager().hasPacket(packet.getId())) {
             if(protocol == Protocol.TCP) {
                 this.tcpConnection.sendInteger(packet.getId());

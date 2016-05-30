@@ -44,18 +44,17 @@ public class ServerTCPConnectionHandler extends Thread {
     @Override
     public void run() {
         while (this.server.isRunning()) {
-            Socket socket;
             try {
-                socket = this.server.getTcpSocket().accept();
+                Socket socket = this.server.getTcpSocket().accept();
+                this.server.getConnectionManager().addClientConnection(this.server, socket);
             } catch (IOException e) {
-                ClientFailedToConnectEvent event = new ClientFailedToConnectEvent(this.server,
-                                new ConnectionException("I/O Error when accepting a TCP" + 
-                                        " connection.", e));
-                this.server.getEventHandler().callEvent(event);
-                continue;
+                if(!this.server.getTcpSocket().isClosed()) {
+                    ClientFailedToConnectEvent event = new ClientFailedToConnectEvent(this.server,
+                                    new ConnectionException("I/O Error when accepting a TCP" + 
+                                            " connection.", e));
+                    this.server.getEventHandler().callEvent(event);
+                }
             }
-
-            this.server.getConnectionManager().addClientConnection(this.server, socket);
         }
     }
 }

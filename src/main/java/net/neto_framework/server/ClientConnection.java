@@ -25,6 +25,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.server.event.events.ClientDisconnectEvent;
 import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
@@ -36,6 +37,8 @@ import net.neto_framework.server.event.events.PacketExceptionEvent;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ClientConnection implements Runnable {
+    
+    //TODO: Implement handshake timeout.
     
     /**
      * UUID of client.
@@ -83,16 +86,22 @@ public class ClientConnection implements Runnable {
                 packetId = this.tcpConnection.receiveInteger();
                 uuidString = this.tcpConnection.receiveString();
             } catch (IOException e) {
-                PacketException exception = new PacketException("Failed to read packet.", e);
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
-                        this.uuid);
-                this.server.getEventHandler().callEvent(packetEvent);
-                
-                this.disconnect();
-                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
-                this.server.getEventHandler().callEvent(event);
-                break;
+                if(!this.tcpConnection.getTCPSocket().isClosed()) {
+                    PacketException exception = new PacketException("Failed to read packet. Client"
+                            + " most likely closed the connection without sending a disconnect"
+                            + " packet.", e);
+                    PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server,
+                            exception, this.uuid);
+                    this.server.getEventHandler().callEvent(packetEvent);
+
+                    this.disconnect(false);
+                    ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                            ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                    this.server.getEventHandler().callEvent(event);
+                    break;
+                } else {
+                    break;
+                }
             }
             
             if(!this.uuid.toString().equals(uuidString) &&
@@ -102,7 +111,7 @@ public class ClientConnection implements Runnable {
                         this.uuid);
                 this.server.getEventHandler().callEvent(packetEvent);
                 
-                this.disconnect();
+                this.disconnect(false);
                 ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
                         ClientDisconnectReason.EXCEPTION, this.uuid, exception);
                 this.server.getEventHandler().callEvent(event);
@@ -118,7 +127,7 @@ public class ClientConnection implements Runnable {
                     this.server.getEventHandler().callEvent(new PacketExceptionEvent(this.server, 
                                     exception));
                     
-                    this.disconnect();
+                    this.disconnect(false);
                     ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
                             ClientDisconnectReason.EXCEPTION, this.uuid, exception);
                     this.server.getEventHandler().callEvent(event);
@@ -130,7 +139,7 @@ public class ClientConnection implements Runnable {
                         this.uuid);
                 this.server.getEventHandler().callEvent(packetEvent);
                 
-                this.disconnect();
+                this.disconnect(false);
                 ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
                         ClientDisconnectReason.EXCEPTION, this.uuid, exception);
                 this.server.getEventHandler().callEvent(event);
@@ -146,7 +155,7 @@ public class ClientConnection implements Runnable {
      * @param protocol What {@link net.neto_framework.Protocol Protocol} to use when sending.
      * @throws IOException If fails to send packet.
      */
-    public void sendPacket(Packet packet, Protocol protocol) throws IOException {
+    public synchronized void sendPacket(Packet packet, Protocol protocol) throws IOException {
         if(this.server.getPacketManager().hasPacket(packet.getId())) {
             if(protocol == Protocol.TCP) {
                 this.tcpConnection.sendInteger(packet.getId());
@@ -179,16 +188,29 @@ public class ClientConnection implements Runnable {
     
     /**
      * Disconnect client from the server.
+     * 
+     * @param sendDisconnectPacket If true, sends a disconnect packet to the client before closing.
      */
-    public void disconnect() {
+    public synchronized void disconnect(boolean sendDisconnectPacket) {
+        if(sendDisconnectPacket) {
+            try {
+                this.sendPacket(new DisconnectPacket(), Protocol.TCP);
+            } catch (IOException e) {} //TODO: Log
+        }
+        
         try {
             this.tcpConnection.getTCPSocket().close();
         } catch (IOException e) { } //TODO: Log
 
         this.server.getConnectionManager().removeClientConnection(this.uuid);
         this.isConnected = false;
-        
-        //TODO: Send disconnect packet to client.
+    }
+    
+    /**
+     * Disconnect client from the server.
+     */
+    public void disconnect() {
+        this.disconnect(true);
     }
 
     /**

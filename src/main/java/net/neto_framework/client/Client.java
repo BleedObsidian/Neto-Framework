@@ -33,6 +33,7 @@ import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.HandshakeResponsePacket;
 
@@ -91,6 +92,7 @@ public class Client {
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
         this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        this.packetManager.registerPacket(DisconnectPacket.class);
         
         this.eventHandler = new EventHandler();
         this.address = address;
@@ -174,11 +176,15 @@ public class Client {
                                 Client.this.eventHandler.callEvent(event);
                             }
                         } catch (IOException e) {
-                            PacketException exception = new PacketException("Failed to read "
-                                    + "packet.", e);
-                            PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
-                                    exception);
-                            Client.this.eventHandler.callEvent(event);
+                            if(!Client.this.udpSocket.isClosed()) {
+                                PacketException exception = new PacketException("Failed to read "
+                                        + "packet.", e);
+                                PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
+                                        exception);
+                                Client.this.eventHandler.callEvent(event);
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
@@ -187,10 +193,20 @@ public class Client {
     }
 
     /**
-     * Attempt to close connection to server.
+     * Disconnect from the server.
+     * 
+     * @param sendDisconnectPacket If true, sends a disconnect packet to the server before closing.
      */
-    public void disconnect() {
+    public void disconnect(boolean sendDisconnectPacket) {
         if (this.isConnected) {
+            if(sendDisconnectPacket) {
+                try {
+                    this.serverConnection.sendPacket(new DisconnectPacket(), Protocol.TCP);
+                } catch (IOException e) {} //TODO: log
+            }
+            
+            this.isConnected = false;
+            
             try {
                 this.tcpSocket.close();
             } catch (IOException e) {} //TODO: Log
@@ -198,11 +214,14 @@ public class Client {
             if(this.udpSocket != null) {
                 this.udpSocket.close();
             }
-            
-            //TODO: Send disconnect packet.
-            
-            this.isConnected = false;
         }
+    }
+    
+    /**
+     * Disconnect from the server.
+     */
+    public void disconnect() {
+        this.disconnect(true);
     }
 
     /**

@@ -26,6 +26,7 @@ import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
+import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.HandshakeResponsePacket;
 import net.neto_framework.server.exceptions.ServerException;
@@ -129,6 +130,7 @@ public class Server {
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
         this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        this.packetManager.registerPacket(DisconnectPacket.class);
         
         this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
         this.udpConnectionHandler = new ServerUDPConnectionHandler(this);
@@ -176,6 +178,12 @@ public class Server {
      */
     public void stop() throws ServerException {
         if (this.isRunning) {
+            for(ClientConnection client : this.connectionManager.getClientConnections()) {
+                client.disconnect();
+            }
+            
+            this.isRunning = false;
+            
             try {
                 this.tcpSocket.close();
             } catch (IOException e) {
@@ -183,7 +191,6 @@ public class Server {
             }
 
             this.udpSocket.close();
-            this.isRunning = false;
         }
     }
 
@@ -220,7 +227,7 @@ public class Server {
      * @return TCP Server Socket. (Null if not using TCP as protocol or if the
      *         server has not been started.)
      */
-    public synchronized ServerSocket getTcpSocket() {
+    public ServerSocket getTcpSocket() {
         return this.tcpSocket;
     }
 
@@ -228,14 +235,14 @@ public class Server {
      * @return UDP Socket. (Null if not using UDP as protocol or if the server
      *         has not been started.)
      */
-    public synchronized DatagramSocket getUdpSocket() {
+    public DatagramSocket getUdpSocket() {
         return this.udpSocket;
     }
 
     /**
      * @return If server is currently running.
      */
-    public synchronized boolean isRunning() {
+    public boolean isRunning() {
         return this.isRunning;
     }
 
@@ -243,7 +250,7 @@ public class Server {
      * @return {@link net.neto_framework.server.ServerConnectionManager
      * ServerConnectionManager} of this server.
      */
-    public synchronized ServerConnectionManager getConnectionManager() {
+    public ServerConnectionManager getConnectionManager() {
         return this.connectionManager;
     }
 }
