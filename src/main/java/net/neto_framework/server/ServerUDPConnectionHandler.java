@@ -47,6 +47,8 @@ public class ServerUDPConnectionHandler extends Thread {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Neto-Framework Server UDP Handler");
+        
         while (this.server.isRunning()) {
             byte[] data = new byte[65508];
             DatagramPacket dataPacket = new DatagramPacket(data, data.length);

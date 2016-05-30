@@ -43,6 +43,8 @@ public class ServerTCPConnectionHandler extends Thread {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Neto-Framework Server TCP Handler");
+        
         while (this.server.isRunning()) {
             try {
                 Socket socket = this.server.getTcpSocket().accept();

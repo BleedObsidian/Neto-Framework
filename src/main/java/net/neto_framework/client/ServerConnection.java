@@ -66,6 +66,8 @@ public class ServerConnection implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Neto-Framework Client TCP Handler");
+        
         while (this.client.isConnected()) {
             try {
                 int packetId = this.tcpConnection.receiveInteger();

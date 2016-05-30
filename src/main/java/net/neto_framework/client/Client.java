@@ -140,6 +140,8 @@ public class Client {
             (new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    Thread.currentThread().setName("Neto-Framework Client UDP Handler");
+                    
                     while(Client.this.isConnected) {
                         byte[] data = new byte[65508];
                         DatagramPacket dataPacket = new DatagramPacket(data, data.length);

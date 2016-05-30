@@ -3,7 +3,7 @@
   
     <groupId>com.neto_framework</groupId>
     <artifactId>Neto-Framework</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
     <name>Neto-Framework</name>
     <description>A lightweight, event-driven NIO framework.</description>
   

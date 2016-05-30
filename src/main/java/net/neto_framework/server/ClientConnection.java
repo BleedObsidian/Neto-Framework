@@ -83,6 +83,8 @@ public class ClientConnection implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Neto-Framework Server Client: " + this.uuid.toString());
+        
         while (this.server.isRunning() && this.isConnected) {
             int packetId;
             String uuidString;
