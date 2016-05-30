@@ -21,9 +21,13 @@ package net.neto_framework.server;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.server.event.events.ClientConnectEvent;
+import net.neto_framework.server.event.events.ClientFailedToConnectEvent;
+import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
  * A manager to take care of all client connections.
@@ -31,6 +35,14 @@ import net.neto_framework.server.event.events.ClientConnectEvent;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerConnectionManager {
+    
+    //TODO: Keep alive system.
+    
+    /**
+     * The amount of time a client is allowed to complete the handshake process before getting
+     * kicked.
+     */
+    public static int HANDSHAKE_TIMEOUT = 10000;
     
     /**
      * Running instance of {@link net.neto_framework.server.Server Server}.
@@ -67,6 +79,22 @@ public class ServerConnectionManager {
     public ClientConnection addClientConnection(Server server, Socket socket) {
         UUID uuid = UUID.randomUUID();
         ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(socket));
+        
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                clientConnection.disconnect(false);
+                
+                ConnectionException exception = new ConnectionException("Client took too long to "
+                        + "complete handshake process.");
+                ClientFailedToConnectEvent event = new ClientFailedToConnectEvent(
+                        ServerConnectionManager.this.server, exception);
+                ServerConnectionManager.this.server.getEventHandler().callEvent(event);
+            }
+        }, ServerConnectionManager.HANDSHAKE_TIMEOUT);
+        clientConnection.setTimer(timer);
+        
         this.pendingConnections.put(uuid, clientConnection);
         (new Thread(clientConnection)).start();
 
@@ -83,6 +111,7 @@ public class ServerConnectionManager {
         ClientConnection client = this.pendingConnections.get(uuid);
         this.connections.put(uuid, client);
         this.pendingConnections.remove(uuid);
+        client.getTimer().cancel();
         
         ClientConnectEvent event = new ClientConnectEvent(this.server, client);
         this.server.getEventHandler().callEvent(event);

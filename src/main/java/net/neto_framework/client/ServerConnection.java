@@ -73,16 +73,25 @@ public class ServerConnection implements Runnable {
                 
                 if(packetId != (new HandshakeResponsePacket()).getId()) {
                     if(!this.client.getUUID().toString().equals(uuidString)) {
-                        PacketException exception = new PacketException("UUID does not match.");
-                        PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.client,
-                                exception);
-                        this.client.getEventHandler().callEvent(packetEvent);
+                        if(packetId != 0 && !uuidString.equals("")) {
+                            PacketException exception = new PacketException("UUID does not match.");
+                            PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.client,
+                                    exception);
+                            this.client.getEventHandler().callEvent(packetEvent);
 
-                        this.client.disconnect();
-                        DisconnectEvent event = new DisconnectEvent(this.client,
-                                DisconnectReason.EXCEPTION, exception);
-                        this.client.getEventHandler().callEvent(event);
-                        break;
+                            this.client.disconnect();
+                            DisconnectEvent event = new DisconnectEvent(this.client,
+                                    DisconnectReason.EXCEPTION, exception);
+                            this.client.getEventHandler().callEvent(event);
+                            break;
+                        } else {
+                            this.client.disconnect();
+                            DisconnectEvent event = new DisconnectEvent(this.client,
+                                    DisconnectReason.EXCEPTION, new IOException("Connection "
+                                            + "closed."));
+                            this.client.getEventHandler().callEvent(event);
+                            break;
+                        }
                     }
                 }
                 
@@ -107,6 +116,12 @@ public class ServerConnection implements Runnable {
                             "Failed to receive packet.", e);
                     this.client.getEventHandler().callEvent(new PacketExceptionEvent(this.client,
                             exception));
+                    
+                    this.client.disconnect();
+                    DisconnectEvent event = new DisconnectEvent(this.client,
+                            DisconnectReason.EXCEPTION, exception);
+                    this.client.getEventHandler().callEvent(event);
+                    break;
                 }
                 
                 break;

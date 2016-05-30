@@ -20,6 +20,7 @@ package net.neto_framework.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.Timer;
 import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
@@ -38,8 +39,6 @@ import net.neto_framework.server.event.events.PacketExceptionEvent;
  */
 public class ClientConnection implements Runnable {
     
-    //TODO: Implement handshake timeout.
-    
     /**
      * UUID of client.
      */
@@ -53,7 +52,7 @@ public class ClientConnection implements Runnable {
     /**
      * TCP connection.
      */
-    private Connection tcpConnection;
+    private final Connection tcpConnection;
     
     /**
      * UDP connection.
@@ -64,6 +63,11 @@ public class ClientConnection implements Runnable {
      * If the client is currently connected.
      */
     private boolean isConnected;
+    
+    /**
+     * A timer used to kick a client if they do not complete the handshake process in enough time.
+     */
+    private Timer handshakeTimer;
 
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
@@ -204,6 +208,20 @@ public class ClientConnection implements Runnable {
 
         this.server.getConnectionManager().removeClientConnection(this.uuid);
         this.isConnected = false;
+    }
+    
+    /**
+     * @return {@link java.util.Timer Timer} for handshake process.
+     */
+    public Timer getTimer() {
+        return this.handshakeTimer;
+    }
+    
+    /**
+     * @param timer {@link java.util.Timer Timer} for handshake process.
+     */
+    public void setTimer(Timer timer) {
+        this.handshakeTimer = timer;
     }
     
     /**

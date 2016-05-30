@@ -53,7 +53,7 @@ public class PacketManager {
             throw new RuntimeException("Packet illegal access.", e);
         }
         
-        if(!this.packets.containsKey(packet.getId())) {
+        if(!this.packets.containsKey(packet.getId()) && packet.getId() != 0) {
             this.packets.put(packet.getId(), packet);
         } else {
             throw new RuntimeException("Packet ID is already being used or reserved.");
