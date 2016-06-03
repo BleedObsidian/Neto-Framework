@@ -38,21 +38,18 @@ public class ClientConnectEvent extends ServerEvent {
     private final ClientConnection connection;
 
     /**
-     * @param server Running instance of {@link net.neto_framework.server.Server
-     *               Server}.
-     * @param connection The new {@link
-     *                   net.neto_framework.server.ClientConnection
+     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
+     * @param connection The new {@link net.neto_framework.server.ClientConnection 
      *                   ClientConnection}.
      */
     public ClientConnectEvent(Server server, ClientConnection connection) {
-        super(server, Event.CLIENT_CONNECT);
+        super(server, ServerEvents.CLIENT_CONNECT);
 
         this.connection = connection;
     }
 
     /**
-     * @return The new {@link net.neto_framework.server.ClientConnection
-     *         ClientConnection}.
+     * @return The new {@link net.neto_framework.server.ClientConnection ClientConnection}.
      */
     public ClientConnection getClientConnection() {
         return this.connection;

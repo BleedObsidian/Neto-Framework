@@ -19,10 +19,6 @@
 package net.neto_framework;
 
 import java.io.IOException;
-import net.neto_framework.client.Client;
-import net.neto_framework.client.ServerConnection;
-import net.neto_framework.server.ClientConnection;
-import net.neto_framework.server.Server;
 
 /**
  * A packet interface that can be sent and received to and from connections.
@@ -54,7 +50,7 @@ public interface Packet {
      *                         ClientConnection}.
      * @param packet The {@link net.neto_framework.Packet Packet} instance.
      */
-    public void onServerReceive(Server server, ClientConnection clientConnection, Packet packet);
+    //public void onServerReceive(Server server, ClientConnection clientConnection, Packet packet);
     
     /**
      * Fired when this packet is received client-side.
@@ -64,7 +60,7 @@ public interface Packet {
      *                         ServerConnection}.
      * @param packet The {@link net.neto_framework.Packet Packet} instance.
      */
-    public void onClientReceive(Client client, ServerConnection serverConnection, Packet packet);
+    //public void onClientReceive(Client client, ServerConnection serverConnection, Packet packet);
 
     /**
      * @return Unique packet ID.

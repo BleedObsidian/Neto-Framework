@@ -36,6 +36,7 @@ import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.HandshakeResponsePacket;
+import net.neto_framework.packets.NetoClientEventListener;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -95,6 +96,7 @@ public class Client {
         this.packetManager.registerPacket(DisconnectPacket.class);
         
         this.eventHandler = new EventHandler();
+        this.eventHandler.registerClientEventListener(new NetoClientEventListener());
         this.address = address;
     }
 

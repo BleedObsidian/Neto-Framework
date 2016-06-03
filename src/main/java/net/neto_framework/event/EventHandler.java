@@ -94,6 +94,12 @@ public class EventHandler {
      */
     public void callEvent(ServerEvent event) {
         switch (event.getEvent()) {
+        case RECEIVE_PACKET:
+            this.serverEventListeners.stream().forEach((listener) -> {
+                listener.onReceivePacket(
+                        (net.neto_framework.server.event.events.ReceivePacketEvent) event);
+            });
+            break;
         case CLIENT_CONNECT:
             this.serverEventListeners.stream().forEach((listener) -> {
                 listener.onClientConnect((ClientConnectEvent) event);
@@ -125,6 +131,12 @@ public class EventHandler {
      */
     public void callEvent(ClientEvent event) {
         switch (event.getEvent()) {
+        case RECEIVE_PACKET:
+            this.clientEventListeners.stream().forEach((listener) -> {
+                listener.onReceivePacket(
+                        (net.neto_framework.client.event.events.ReceivePacketEvent) event);
+            });
+            break;
         case DISCONNECT:
             this.clientEventListeners.stream().forEach((listener) -> {
                 listener.onDisconnect((DisconnectEvent) event);

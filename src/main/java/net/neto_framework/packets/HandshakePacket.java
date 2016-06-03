@@ -9,15 +9,6 @@ package net.neto_framework.packets;
 import java.io.IOException;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
-import net.neto_framework.Protocol;
-import net.neto_framework.client.Client;
-import net.neto_framework.client.ServerConnection;
-import net.neto_framework.exceptions.PacketException;
-import net.neto_framework.server.ClientConnection;
-import net.neto_framework.server.Server;
-import net.neto_framework.server.event.events.ClientDisconnectEvent;
-import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
-import net.neto_framework.server.event.events.PacketExceptionEvent;
 
 /**
  * The handshake packet is the first packet send from client -> server.
@@ -53,46 +44,18 @@ public class HandshakePacket implements Packet {
         this.udpPort = connection.receiveInteger();
     }
     
-    @Override
-    public void onServerReceive(Server server, ClientConnection client, Packet packet) {
-        if(this.value.equals(HandshakePacket.MAGIC_STRING)) {
-            HandshakeResponsePacket response = new HandshakeResponsePacket();
-            response.setUUID(client.getUUID().toString());
-            
-            try {
-                client.sendPacket(response, Protocol.TCP);
-            } catch (IOException e) {
-                PacketException exception = new PacketException("Failed to send handshake "
-                        + "reponse.", e);
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(server, exception);
-                server.getEventHandler().callEvent(packetEvent);
-
-                client.disconnect();
-                ClientDisconnectEvent event = new ClientDisconnectEvent(server,
-                        ClientDisconnectReason.EXCEPTION, client.getUUID(), exception);
-                server.getEventHandler().callEvent(event);
-                return;
-            }
-            
-            Connection udpConnection = new Connection(server.getUdpSocket(),
-                    client.getTCPConnection().getTCPSocket().getInetAddress(), this.udpPort);
-            client.addUdpConnection(udpConnection);
-            
-            server.getConnectionManager().onConnectionValidated(client.getUUID());
-        } else {
-            PacketException exception = new PacketException("Incorrect magic string received.");
-            PacketExceptionEvent packetEvent = new PacketExceptionEvent(server, exception);
-            server.getEventHandler().callEvent(packetEvent);
-            
-            client.disconnect();
-            ClientDisconnectEvent event = new ClientDisconnectEvent(server,
-                    ClientDisconnectReason.EXCEPTION, client.getUUID(), exception);
-            server.getEventHandler().callEvent(event);
-        }
+    /**
+     * @return The actual magic string value that was received.
+     */
+    public String getValue() {
+        return this.value;
     }
-
-    @Override
-    public void onClientReceive(Client client, ServerConnection connection, Packet packet) {
+    
+    /**
+     * @return The UDP port the client is listening on..
+     */
+    public int getUdpPort() {
+        return this.udpPort;
     }
     
     /**

@@ -7,17 +7,8 @@
 package net.neto_framework.packets;
 
 import java.io.IOException;
-import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
-import net.neto_framework.client.Client;
-import net.neto_framework.client.ServerConnection;
-import net.neto_framework.client.event.events.DisconnectEvent;
-import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
-import net.neto_framework.client.event.events.PacketExceptionEvent;
-import net.neto_framework.exceptions.PacketException;
-import net.neto_framework.server.ClientConnection;
-import net.neto_framework.server.Server;
 
 /**
  * The handshake response packet is sent from server -> client after the server has received a
@@ -49,24 +40,11 @@ public class HandshakeResponsePacket implements Packet {
         this.uuid = connection.receiveString();
     }
     
-    @Override
-    public void onServerReceive(Server server, ClientConnection client, Packet packet) {
-    }
-
-    @Override
-    public void onClientReceive(Client client, ServerConnection connection, Packet packet) {
-        if(this.value.equals(HandshakePacket.MAGIC_STRING)) {
-            client.setUUID(UUID.fromString(this.uuid));
-        } else {
-            PacketException exception = new PacketException("Incorrect magic string received.");
-            PacketExceptionEvent packetEvent = new PacketExceptionEvent(client, exception);
-            client.getEventHandler().callEvent(packetEvent);
-            
-            client.disconnect();
-            DisconnectEvent event = new DisconnectEvent(client, DisconnectReason.EXCEPTION, 
-                    exception);
-            client.getEventHandler().callEvent(event);
-        }
+    /**
+     * @return The actual magic string value that was received.
+     */
+    public String getValue() {
+        return this.value;
     }
     
     /**

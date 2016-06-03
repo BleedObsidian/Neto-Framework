@@ -92,7 +92,9 @@ public class PacketManager {
                 packet.receive(client.getUDPConnection());
             }
             
-            packet.onServerReceive(server, client, packet);
+            server.getEventHandler().callEvent(
+                    new net.neto_framework.server.event.events.ReceivePacketEvent(
+                            server, client, packet));
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {
@@ -121,7 +123,9 @@ public class PacketManager {
                 packet.receive(serverConnection.getUDPConnection());
             }
             
-            packet.onClientReceive(client, serverConnection, packet);
+            client.getEventHandler().callEvent(
+                    new net.neto_framework.client.event.events.ReceivePacketEvent(
+                            client, serverConnection, packet));
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {

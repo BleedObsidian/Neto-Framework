@@ -68,13 +68,19 @@ public class ClientEvent {
      * @author BleedObsidian (Jesse Prescott)
      */
     public enum ClientEvents {
+        
         /**
-         * Fired when the client is disconnected from the server.
+         * {@link net.neto_framework.client.event.events.ReceivePacketEvent ReceivePacketEvent}.
+         */
+        RECEIVE_PACKET,
+        
+        /**
+         * {@link net.neto_framework.client.event.events.DisconnectEvent DisconnectEvent}.
          */
         DISCONNECT,
         
         /**
-         * Fired when a packet exception is raised in the client.
+         * {@link net.neto_framework.client.event.events.PacketExceptionEvent PacketExceptionEvent}.
          */
         PACKET_EXCEPTION;
     }

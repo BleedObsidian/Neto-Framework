@@ -29,6 +29,7 @@ import net.neto_framework.event.EventHandler;
 import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.HandshakeResponsePacket;
+import net.neto_framework.packets.NetoServerEventListener;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -137,6 +138,7 @@ public class Server {
         
         this.connectionManager = new ServerConnectionManager(this);
         this.eventHandler = new EventHandler();
+        this.eventHandler.registerServerEventListener(new NetoServerEventListener());
 
         this.address = address;
         this.backlog = Server.DEFAULT_BACKLOG;

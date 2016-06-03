@@ -57,7 +57,7 @@ public class ClientDisconnectEvent extends ServerEvent {
      */
     public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid,
             Exception exception) {
-        super(server, Event.CLIENT_DISCONNECT);
+        super(server, ServerEvents.CLIENT_DISCONNECT);
 
         this.reason = reason;
         this.uuid = uuid;
@@ -71,7 +71,7 @@ public class ClientDisconnectEvent extends ServerEvent {
      * @param uuid The {@link java.util.UUID UUID} of the client that was disconnected.
      */
     public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid) {
-        super(server, Event.CLIENT_DISCONNECT);
+        super(server, ServerEvents.CLIENT_DISCONNECT);
 
         this.reason = reason;
         this.uuid = uuid;

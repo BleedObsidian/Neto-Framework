@@ -35,13 +35,13 @@ public class ServerEvent {
     /**
      * Event.
      */
-    private final Event event;
+    private final ServerEvents event;
 
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
-     * @param event Which {@link Event Event} this represents.
+     * @param event Which {@link ServerEvents Event} this represents.
      */
-    public ServerEvent(Server server, Event event) {
+    public ServerEvent(Server server, ServerEvents event) {
         this.server = server;
         this.event = event;
     }
@@ -54,9 +54,9 @@ public class ServerEvent {
     }
 
     /**
-     * @return Which {@link Event Event} this represents.
+     * @return Which {@link ServerEvents Event} this represents.
      */
-    public Event getEvent() {
+    public ServerEvents getEvent() {
         return this.event;
     }
     
@@ -65,7 +65,12 @@ public class ServerEvent {
     * 
     * @author BleedObsidian (Jesse Prescott)
     */
-   public enum Event {
+   public enum ServerEvents {
+       
+        /**
+         * {@link net.neto_framework.server.event.events.ReceivePacketEvent ReceivePacketEvent}.
+         */
+       RECEIVE_PACKET,
        
        /**
         * {@link net.neto_framework.server.event.events.ClientConnectEvent ClientConnectEvent}.

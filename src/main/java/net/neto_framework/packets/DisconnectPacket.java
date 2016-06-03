@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+    Neto-Framework, a lightweight, event driven network application framework.
+    Copyright (C) 2014  BleedObsidian (Jesse Prescott)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.neto_framework.packets;
@@ -9,14 +21,6 @@ package net.neto_framework.packets;
 import java.io.IOException;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
-import net.neto_framework.client.Client;
-import net.neto_framework.client.ServerConnection;
-import net.neto_framework.client.event.events.DisconnectEvent;
-import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
-import net.neto_framework.server.ClientConnection;
-import net.neto_framework.server.Server;
-import net.neto_framework.server.event.events.ClientDisconnectEvent;
-import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
 
 /**
  * A disconnect packet can be sent to/from either server or client. This packet is sent before the
@@ -32,21 +36,6 @@ public class DisconnectPacket implements Packet {
 
     @Override
     public void receive(Connection connection) throws IOException {
-    }
-
-    @Override
-    public void onServerReceive(Server server, ClientConnection clientConnection, Packet packet) {
-        clientConnection.disconnect(false);
-        ClientDisconnectEvent event = new ClientDisconnectEvent(server,
-                ClientDisconnectReason.DISCONNECT_PACKET, clientConnection.getUUID());
-        server.getEventHandler().callEvent(event);
-    }
-
-    @Override
-    public void onClientReceive(Client client, ServerConnection serverConnection, Packet packet) {
-        client.disconnect(false);
-        DisconnectEvent event = new DisconnectEvent(client, DisconnectReason.DISCONNECT_PACKET);
-        client.getEventHandler().callEvent(event);
     }
 
     @Override

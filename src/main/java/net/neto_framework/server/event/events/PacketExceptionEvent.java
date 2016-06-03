@@ -49,7 +49,7 @@ public class PacketExceptionEvent extends ServerEvent {
      * @param uuid The UUID of the client that was involved in the event.
      */
     public PacketExceptionEvent(Server server, PacketException exception, UUID uuid) {
-        super(server, Event.PACKET_EXCEPTION);
+        super(server, ServerEvents.PACKET_EXCEPTION);
 
         this.exception = exception;
         this.uuid = uuid;
@@ -62,7 +62,7 @@ public class PacketExceptionEvent extends ServerEvent {
      *                  that was thrown.
      */
     public PacketExceptionEvent(Server server, PacketException exception) {
-        super(server, Event.PACKET_EXCEPTION);
+        super(server, ServerEvents.PACKET_EXCEPTION);
 
         this.exception = exception;
         this.uuid = null;

@@ -45,7 +45,7 @@ public class ClientFailedToConnectEvent extends ServerEvent {
      */
     public ClientFailedToConnectEvent(Server server, 
             ConnectionException exception) {
-        super(server, Event.CLIENT_FAILED_TO_CONNECT);
+        super(server, ServerEvents.CLIENT_FAILED_TO_CONNECT);
 
         this.exception = exception;
     }
