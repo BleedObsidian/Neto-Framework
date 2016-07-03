@@ -23,7 +23,6 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import net.neto_framework.PacketManager;
-import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.packets.DisconnectPacket;
@@ -40,14 +39,9 @@ import net.neto_framework.server.exceptions.ServerException;
  */
 public class Server {
     /**
-     * Default backlog value for TCP servers.
+     * Default backlog value for TCP server socket.
      */
     public static final int DEFAULT_BACKLOG = 50;
-
-    /**
-     * Default protocol used when a protocol is not given.
-     */
-    public static final Protocol DEFAULT_PROTOCOL = Protocol.TCP;
 
     /**
      * The {@link net.neto_framework.PacketManager PacketManager}.
@@ -86,7 +80,7 @@ public class Server {
     /**
      * The TCP backlog value.
      */
-    private final int backlog;
+    private int backlog;
 
     /**
      * The TCP Socket. (If using TCP)
@@ -102,26 +96,6 @@ public class Server {
      * If the server is currently running.
      */
     private volatile boolean isRunning;
-
-    /**
-     * @param address {@link net.neto_framework.address.SocketAddress
-     *                SocketAddress} for server to bind to.
-     * @param backlog Maximum amount of connections to queue.
-     */
-    public Server(SocketAddress address, int backlog) {
-        this.packetManager = new PacketManager();
-        this.packetManager.registerPacket(HandshakePacket.class);
-        this.packetManager.registerPacket(HandshakeResponsePacket.class);
-        
-        this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
-        this.udpConnectionHandler = new ServerUDPConnectionHandler(this);
-        
-        this.connectionManager = new ServerConnectionManager(this);
-        this.eventHandler = new EventHandler();
-
-        this.address = address;
-        this.backlog = backlog;
-    }
 
     /**
      * @param address {@link net.neto_framework.address.SocketAddress
@@ -223,6 +197,13 @@ public class Server {
      */
     public int getBacklog() {
         return this.backlog;
+    }
+    
+    /**
+     * @param backlog TCP backlog value. (Must be set before server is started).
+     */
+    public void setBacklog(int backlog) {
+        this.backlog = backlog;
     }
 
     /**
