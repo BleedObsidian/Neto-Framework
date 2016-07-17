@@ -24,7 +24,13 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Random;
 import java.util.UUID;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
@@ -34,9 +40,11 @@ import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.packets.DisconnectPacket;
+import net.neto_framework.packets.EncryptionRequestPacket;
+import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
-import net.neto_framework.packets.HandshakeResponsePacket;
 import net.neto_framework.packets.NetoClientEventListener;
+import net.neto_framework.packets.SuccessPacket;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -59,6 +67,11 @@ public class Client {
      * The {@link net.neto_framework.address.SocketAddress} to connect to.
      */
     private final SocketAddress address;
+    
+    /**
+     * A random short sent to the server and must be received exactly in the success packet.
+     */
+    private final short random;
 
     /**
      * TCP Socket.
@@ -81,6 +94,21 @@ public class Client {
     private volatile boolean isConnected;
     
     /**
+     * The public key from the server used by the client to encrypt the shared secret.
+     */
+    private PublicKey publicKey;
+    
+    /**
+     * The secret key used to encrypt/decrypt packets after encryption response.
+     */
+    private SecretKey secretKey;
+    
+    /**
+     * The IV parameter spec used for ciphering.
+     */
+    private IvParameterSpec ivParameterSpec;
+    
+    /**
      * UUID given by server.
      */
     private UUID uuid;
@@ -92,12 +120,17 @@ public class Client {
     public Client(SocketAddress address) {
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
-        this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        this.packetManager.registerPacket(EncryptionRequestPacket.class);
+        this.packetManager.registerPacket(EncryptionResponsePacket.class);
+        this.packetManager.registerPacket(SuccessPacket.class);
         this.packetManager.registerPacket(DisconnectPacket.class);
         
         this.eventHandler = new EventHandler();
         this.eventHandler.registerClientEventListener(new NetoClientEventListener());
         this.address = address;
+        
+        Random random = new Random();
+        this.random = (short) random.nextInt(Short.MAX_VALUE + 1);
     }
 
     /**
@@ -151,9 +184,20 @@ public class Client {
                         try {
                             Client.this.udpSocket.receive(dataPacket);
 
+                             // Trim data
+                            int i = data.length - 1;
+                            while (i >= 0 && data[i] == 0) {
+                                --i;
+                            }
+
+                            data = Arrays.copyOf(data, i + 1);
+                            data = Base64.getDecoder().decode(data);
+                            
                             Connection connection = new Connection(udpSocket,
                                     dataPacket.getAddress(), dataPacket.getPort());
-
+                            connection.enableEncryption(Client.this.secretKey,
+                                    Client.this.ivParameterSpec);
+                            
                             ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
                             connection.setUdpDataInputStream(inputStream);
                             int packetId = connection.receiveInteger();
@@ -167,7 +211,7 @@ public class Client {
                                 Client.this.eventHandler.callEvent(event);
                             }
 
-                            if(Client.this.uuid.equals(uuid)) {
+                            if(Client.this.uuid != null | Client.this.uuid.equals(uuid)) {
                                 Client.this.serverConnection.getUDPConnection().
                                         setUdpDataInputStream(inputStream);
                                 Client.this.packetManager.receive(Client.this, packetId,
@@ -195,6 +239,13 @@ public class Client {
             })).start();
         }
     }
+    
+    /**
+     * Disconnect from the server.
+     */
+    public void dissconnect() {
+        this.disconnect(true);
+    }
 
     /**
      * Disconnect from the server.
@@ -206,7 +257,7 @@ public class Client {
             if(sendDisconnectPacket) {
                 try {
                     this.serverConnection.sendPacket(new DisconnectPacket(), Protocol.TCP);
-                } catch (IOException e) {} //TODO: log
+                } catch (IOException e) {} //TODO: Log
             }
             
             this.isConnected = false;
@@ -248,6 +299,13 @@ public class Client {
     public SocketAddress getAddress() {
         return this.address;
     }
+    
+    /**
+     * @return A random short sent to the server and must be received exactly in the success packet.
+     */
+    public short getRandom() {
+        return this.random;
+    }
 
     /**
      * @return TCP Socket. (Null if not using TCP as protocol or if the client
@@ -277,6 +335,49 @@ public class Client {
      */
     public boolean isConnected() {
         return this.isConnected;
+    }
+    
+    /**
+     * @return The public key from the server used by the client to encrypt the shared secret.
+     */
+    public PublicKey getPublicKey() {
+        return this.publicKey;
+    }
+    
+    /**
+     * @param publicKey The public key from the server used by the client to encrypt the shared
+     *                  secret.
+     */
+    public void setPublicKey(PublicKey publicKey) {
+        this.publicKey = publicKey;
+    }
+    
+    /**
+     * @return The secret key used to encrypt/decrypt packets after encryption response.
+     */
+    public SecretKey getSecretKey() {
+        return this.secretKey;
+    }
+    
+    /**
+     * @param secretKey The secret key used to encrypt/decrypt packets after encryption response.
+     */
+    public void setSecretKey(SecretKey secretKey) {
+        this.secretKey = secretKey;
+    }
+    
+    /**
+     * @return The IV parameter spec used for ciphering.
+     */
+    public IvParameterSpec getIvParameterSpec() {
+        return this.ivParameterSpec;
+    }
+    
+    /**
+     * @param ivParameterSpec The IV parameter spec used for ciphering.
+     */
+    public void setIvParameterSpec(IvParameterSpec ivParameterSpec) {
+        this.ivParameterSpec = ivParameterSpec;
     }
     
     /**

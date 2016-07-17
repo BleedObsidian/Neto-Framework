@@ -20,6 +20,7 @@ package net.neto_framework.client;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.Base64;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.Protocol;
@@ -27,7 +28,6 @@ import net.neto_framework.client.event.events.DisconnectEvent;
 import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
 import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.exceptions.PacketException;
-import net.neto_framework.packets.HandshakeResponsePacket;
 
 /**
  * A connection thread to handle the server connection.
@@ -71,9 +71,11 @@ public class ServerConnection implements Runnable {
         while (this.client.isConnected()) {
             try {
                 int packetId = this.tcpConnection.receiveInteger();
-                String uuidString = this.tcpConnection.receiveString();
+                String uuidString;
                 
-                if(packetId != (new HandshakeResponsePacket()).getId()) {
+                if(this.client.getUUID() != null) {
+                    uuidString = this.tcpConnection.receiveString();
+                    
                     if(!this.client.getUUID().toString().equals(uuidString)) {
                         if(packetId != 0 && !uuidString.equals("")) {
                             PacketException exception = new PacketException("UUID does not match.");
@@ -143,9 +145,7 @@ public class ServerConnection implements Runnable {
             if(protocol == Protocol.TCP) {
                 this.tcpConnection.sendInteger(packet.getId());
 
-                if(this.client.getUUID() == null) {
-                    this.tcpConnection.sendString("");
-                } else {
+                if(this.client.getUUID() != null) {
                     this.tcpConnection.sendString(this.client.getUUID().toString());
                 }
 
@@ -155,7 +155,8 @@ public class ServerConnection implements Runnable {
                 this.udpConnection.sendString(this.client.getUUID().toString());
                 packet.send(this.udpConnection);
                 byte[] data = this.udpConnection.getUdpData();
-
+                data = Base64.getEncoder().withoutPadding().encode(data);
+                
                 DatagramPacket dataPacket = new DatagramPacket(data, data.length,
                         this.udpConnection.getAddress(), this.udpConnection.getPort());
                 this.client.getUdpSocket().send(dataPacket);
@@ -163,6 +164,16 @@ public class ServerConnection implements Runnable {
         } else {
             throw new RuntimeException("Attempt to send unregistered packet.");
         }
+    }
+    
+    /**
+     * Enable encryption. (Used during handshake process).
+     */
+    public void enableEncryption() {
+        this.tcpConnection.enableEncryption(this.client.getSecretKey(),
+                this.client.getIvParameterSpec());
+        this.udpConnection.enableEncryption(this.client.getSecretKey(),
+                this.client.getIvParameterSpec());
     }
     
     /**

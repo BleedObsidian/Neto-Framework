@@ -40,6 +40,6 @@ public class DisconnectPacket implements Packet {
 
     @Override
     public int getId() {
-        return -3;
+        return -5;
     }
 }

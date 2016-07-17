@@ -18,6 +18,7 @@
 
 package net.neto_framework.server;
 
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +36,6 @@ import net.neto_framework.server.exceptions.ConnectionException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerConnectionManager {
-    
-    //TODO: Keep alive system.
     
     /**
      * The amount of time a client is allowed to complete the handshake process before getting
@@ -141,10 +140,26 @@ public class ServerConnectionManager {
      * Get ClientConnection from given UUID.
      * 
      * @param uuid UUID.
-     * @return Connection.
+     * @return Connection. (May be null)
      */
     public ClientConnection getClientConnection(UUID uuid) {
         return this.connections.get(uuid);
+    }
+    
+    /**
+     * Get ClientConnection from given IP address.
+     * 
+     * @param address InetAddress
+     * @return Connection. (May be null)
+     */
+    public ClientConnection getClientConnection(InetAddress address) {
+        for(ClientConnection connection : this.connections.values()) {
+            if(connection.getTCPConnection().getTCPSocket().getInetAddress().equals(address)) {
+                return connection;
+            }
+        }
+        
+        return null;
     }
     
     /**

@@ -20,14 +20,16 @@ package net.neto_framework.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.Base64;
 import java.util.Timer;
 import java.util.UUID;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.packets.DisconnectPacket;
-import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.server.event.events.ClientDisconnectEvent;
 import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
 import net.neto_framework.server.event.events.PacketExceptionEvent;
@@ -60,6 +62,16 @@ public class ClientConnection implements Runnable {
     private Connection udpConnection;
     
     /**
+     * The secret key used for packet encryption.
+     */
+    private SecretKey secretKey;
+    
+    /**
+     * The IV parameter spec used for ciphering.
+     */
+    private IvParameterSpec ivParameterSpec;
+    
+    /**
      * If the client is currently connected.
      */
     private boolean isConnected;
@@ -68,6 +80,11 @@ public class ClientConnection implements Runnable {
      * A timer used to kick a client if they do not complete the handshake process in enough time.
      */
     private Timer handshakeTimer;
+    
+    /**
+     * If the client and server have completed the handshake process.
+     */
+    private boolean isHandshakeCompleted = false;
 
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
@@ -87,10 +104,14 @@ public class ClientConnection implements Runnable {
         
         while (this.server.isRunning() && this.isConnected) {
             int packetId;
-            String uuidString;
+            String uuidString = "";
+            
             try {
                 packetId = this.tcpConnection.receiveInteger();
-                uuidString = this.tcpConnection.receiveString();
+                
+                if(this.isHandshakeCompleted) {
+                    uuidString = this.tcpConnection.receiveString();
+                }
             } catch (IOException e) {
                 if(!this.tcpConnection.getTCPSocket().isClosed()) {
                     PacketException exception = new PacketException("Failed to read packet. Client"
@@ -110,8 +131,7 @@ public class ClientConnection implements Runnable {
                 }
             }
             
-            if(!this.uuid.toString().equals(uuidString) &&
-                    packetId != (new HandshakePacket()).getId()) {
+            if(this.isHandshakeCompleted && !this.uuid.toString().equals(uuidString)) {
                 PacketException exception = new PacketException("UUID does not match.");
                 PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
                         this.uuid);
@@ -140,7 +160,8 @@ public class ClientConnection implements Runnable {
                     break;
                 }
             } else {
-                PacketException exception = new PacketException("Unkown packet received.");
+                PacketException exception = new PacketException("Unkown packet received." +
+                        packetId);
                 PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
                         this.uuid);
                 this.server.getEventHandler().callEvent(packetEvent);
@@ -165,13 +186,18 @@ public class ClientConnection implements Runnable {
         if(this.server.getPacketManager().hasPacket(packet.getId())) {
             if(protocol == Protocol.TCP) {
                 this.tcpConnection.sendInteger(packet.getId());
-                this.tcpConnection.sendString(this.uuid.toString());
+                
+                if(this.isHandshakeCompleted) {
+                    this.tcpConnection.sendString(this.uuid.toString());
+                }
+                
                 packet.send(this.tcpConnection);
             } else {
                 this.udpConnection.sendInteger(packet.getId());
                 this.udpConnection.sendString(this.uuid.toString());
                 packet.send(this.udpConnection);
                 byte[] data = this.udpConnection.getUdpData();
+                data = Base64.getEncoder().withoutPadding().encode(data);
 
                 DatagramPacket dataPacket = new DatagramPacket(data, data.length,
                         this.udpConnection.getAddress(), this.udpConnection.getPort());
@@ -180,16 +206,6 @@ public class ClientConnection implements Runnable {
         } else {
             throw new RuntimeException("Attempt to send unregistered packet.");
         }
-    }
-    
-    /**
-     * Add the UDP connection of client. This can be used when a handshake packet is received
-     * telling the server what port to communicate to the client with.
-     * 
-     * @param udpConnection UDP {@link net.neto_framework.Connection Connection}.
-     */
-    public void addUdpConnection(Connection udpConnection) {
-        this.udpConnection = udpConnection;
     }
     
     /**
@@ -213,6 +229,52 @@ public class ClientConnection implements Runnable {
     }
     
     /**
+     * Enable encryption.
+     */
+    public void enableEncryption() {
+        this.tcpConnection.enableEncryption(this.secretKey, this.ivParameterSpec);
+        this.udpConnection.enableEncryption(this.secretKey, this.ivParameterSpec);
+    }
+    
+    /**
+     * Add the UDP connection of client. This can be used when a handshake packet is received
+     * telling the server what port to communicate to the client with.
+     * 
+     * @param udpConnection UDP {@link net.neto_framework.Connection Connection}.
+     */
+    public void addUdpConnection(Connection udpConnection) {
+        this.udpConnection = udpConnection;
+    }
+    
+    /**
+     * @return The secret key used for packet encryption.
+     */
+    public SecretKey getSecretKey() {
+        return this.secretKey;
+    }
+    
+    /**
+     * @param secretKey The secret key used for packet encryption.
+     */
+    public void setSecretKey(SecretKey secretKey) {
+        this.secretKey = secretKey;
+    }
+    
+    /**
+     * @return The IV parameter spec used for ciphering.
+     */
+    public IvParameterSpec getIvParameterSpec() {
+        return this.ivParameterSpec;
+    }
+    
+    /**
+     * @param ivParameterSpec The IV parameter spec used for ciphering.
+     */
+    public void setIvParameterSpec(IvParameterSpec ivParameterSpec) {
+        this.ivParameterSpec = ivParameterSpec;
+    }
+    
+    /**
      * @return {@link java.util.Timer Timer} for handshake process.
      */
     public Timer getTimer() {
@@ -224,6 +286,20 @@ public class ClientConnection implements Runnable {
      */
     public void setTimer(Timer timer) {
         this.handshakeTimer = timer;
+    }
+    
+    /**
+     * @return If the client and server have completed the handshake process.
+     */
+    public boolean isHandshakeCompleted() {
+        return this.isHandshakeCompleted;
+    }
+    
+    /**
+     * @param value If the client and server have completed the handshake process.
+     */
+    public void setHandshakeCompleted(boolean value) {
+        this.isHandshakeCompleted = value;
     }
     
     /**

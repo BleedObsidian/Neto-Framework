@@ -20,6 +20,8 @@ package net.neto_framework.server;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.Protocol;
@@ -55,24 +57,34 @@ public class ServerUDPConnectionHandler extends Thread {
 
             try {
                 this.server.getUdpSocket().receive(dataPacket);
+                
+                // Trim data
+                int i = data.length - 1;
+                while (i >= 0 && data[i] == 0) {
+                    --i;
+                }
+
+                data = Arrays.copyOf(data, i + 1);
+                data = Base64.getDecoder().decode(data);
 
                 Connection connection = new Connection(this.server.getUdpSocket(),
                         dataPacket.getAddress(), dataPacket.getPort());
-
+                ClientConnection client = this.server.getConnectionManager().
+                        getClientConnection(dataPacket.getAddress());
+                connection.enableEncryption(client.getSecretKey(), client.getIvParameterSpec());
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
                 connection.setUdpDataInputStream(inputStream);
                 int packetId = connection.receiveInteger();
-                UUID uuid = UUID.fromString(connection.receiveString());
-
+                
                 if(!this.server.getPacketManager().hasPacket(packetId)) {
                     PacketException exception = new PacketException("Unkown packet received.");
                     PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
                     this.server.getEventHandler().callEvent(event);
                 }
                 
+                UUID uuid = UUID.fromString(connection.receiveString());
+                
                 if(this.server.getConnectionManager().hasClientConnection(uuid)) {
-                    ClientConnection client = this.server.getConnectionManager().
-                            getClientConnection(uuid);
                     client.getUDPConnection().setUdpDataInputStream(inputStream);
                     this.server.getPacketManager().receive(this.server, packetId, client,
                             Protocol.UDP);

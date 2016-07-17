@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package net.neto_framework.packets;
 
 import java.io.IOException;
@@ -22,37 +23,36 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The handshake packet is the first packet send from client -> server.
+ * The encryption request packet is sent from server -> client after the server has received a
+ * handshake. This packet contains the servers public key that should be used to encrypt the shared
+ * secret when sending the encryption response.
  *
  * @author Jesse Prescott (BleedObsidian)
  */
-public class HandshakePacket implements Packet {
+public class EncryptionRequestPacket implements Packet {
     
     /**
-     * The magic string that is sent to ensure the same framework is being used.
-     */
-    public static final String MAGIC_STRING = "sjd7dHS92jS92L02";
-    
-    /**
-     * The actual value that was received.
+     * The actual magic string value that was received.
      */
     private String value;
     
     /**
-     * The UDP port the client is listening on.
+     * The public key to be used by client to encrypt shared secret.
      */
-    private int udpPort;
+    private byte[] publicKey;
 
     @Override
     public void send(Connection connection) throws IOException {
         connection.sendString(HandshakePacket.MAGIC_STRING);
-        connection.sendInteger(this.udpPort);
+        connection.sendInteger(this.publicKey.length);
+        connection.send(this.publicKey);
     }
     
     @Override
     public void receive(Connection connection) throws IOException {
         this.value = connection.receiveString();
-        this.udpPort = connection.receiveInteger();
+        int keyLength = connection.receiveInteger();
+        this.publicKey = connection.receive(new byte[keyLength]);
     }
     
     /**
@@ -63,21 +63,21 @@ public class HandshakePacket implements Packet {
     }
     
     /**
-     * @return The UDP port the client is listening on..
+     * @return The public key to be used by client to encrypt shared secret.
      */
-    public int getUdpPort() {
-        return this.udpPort;
+    public byte[] getPublicKey() {
+        return this.publicKey;
     }
     
     /**
-     * @param port The UDP port the client is listening on.
+     * @param publicKey The public key to be used by client to encrypt shared secret.
      */
-    public void setUdpPort(int port) {
-        this.udpPort = port;
+    public void setPublicKey(byte[] publicKey) {
+        this.publicKey = publicKey;
     }
 
     @Override
     public int getId() {
-        return -1;
+        return -2;
     }
 }

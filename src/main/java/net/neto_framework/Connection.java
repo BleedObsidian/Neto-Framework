@@ -25,6 +25,15 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 /**
  * An interface to send and receive data from TCP and UDP.
@@ -73,6 +82,26 @@ public final class Connection {
      * The stream to write to when using UDP.
      */
     private ByteArrayOutputStream udpDataOutputStream;
+    
+    /**
+     * SecretKey used for encryption/decryption.
+     */
+    private SecretKey secretKey;
+    
+    /**
+     * Cipher used for encryption/decryption.
+     */
+    private Cipher cipher;
+    
+    /**
+     * IvParameterSpec used for cipher.
+     */
+    private IvParameterSpec iv;
+    
+    /**
+     * If the connection is encrypted.
+     */
+    private boolean isEncrypted;
 
     /**
      * @param socket {@link java.net.Socket Socket}.
@@ -111,6 +140,16 @@ public final class Connection {
      * @throws IOException If failed to send
      */
     public void send(byte[] data) throws IOException {
+        if(this.isEncrypted) {
+            try {
+                this.cipher.init(Cipher.ENCRYPT_MODE, this.secretKey, this.iv);
+                data = cipher.doFinal(data);
+            } catch (InvalidKeyException | InvalidAlgorithmParameterException |
+                    IllegalBlockSizeException | BadPaddingException e) {
+                throw new IOException("Failed to encrypt data when sending.", e);
+            }
+        }
+        
         if (this.protocol == Protocol.TCP) {
             this.tcpSocket.getOutputStream().write(data);
         } else {
@@ -132,10 +171,38 @@ public final class Connection {
             } else {
                 throw new IOException("Input shutdown");
             }
-            return buffer;
         } else {
             this.udpDataInputStream.read(buffer);
-            return buffer;
+        }
+        
+        if(this.isEncrypted) {
+            try {
+                this.cipher.init(Cipher.DECRYPT_MODE, this.secretKey, this.iv);
+                buffer = this.cipher.doFinal(buffer);
+            } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | 
+                    InvalidAlgorithmParameterException e) {
+                throw new IOException("Failed to decrypt data when reading.", e);
+            }
+        }
+        
+        return buffer;
+    }
+    
+    /**
+     * Enable encryption.
+     * 
+     * @param secretKey SecretKey.
+     * @param ivParameterSpec The IV parameter spec used for ciphering.
+     */
+    public void enableEncryption(SecretKey secretKey, IvParameterSpec ivParameterSpec) {
+        this.secretKey = secretKey;
+        
+        try {
+            this.cipher = Cipher.getInstance("DESede/CFB8/NoPadding");
+            this.iv = ivParameterSpec;
+            this.isEncrypted = true;
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new RuntimeException("Failed to enable encryptin on connection.", e);
         }
     }
     
@@ -144,6 +211,31 @@ public final class Connection {
      */
     public void flush() {
         this.udpDataOutputStream = new ByteArrayOutputStream();
+    }
+    
+    /**
+     * Send a byte array of variable length.
+     * 
+     * @param data Byte array.
+     * @throws IOException If fails to send byte array.
+     */
+    public void sendByteArray(byte[] data) throws IOException {
+        this.sendInteger(data.length);
+        this.send(data);
+    }
+    
+    /**
+     * Receive a byte array of variable length.
+     * 
+     * @return Byte array.
+     * @throws IOException If fails to receive byte array. 
+     */
+    public byte[] receiveByteArray() throws IOException {
+        int length = this.receiveInteger();
+        byte[] data = new byte[length];
+        this.receive(data);
+        
+        return data;
     }
 
     /**
@@ -344,10 +436,9 @@ public final class Connection {
     }
     
     /**
-     * @param inputStream ByteArrayInputStream containing the data source.
+     * @param inputStream ByteArrayInputStream.
      */
-    public synchronized void setUdpDataInputStream(ByteArrayInputStream
-            inputStream) {
+    public synchronized void setUdpDataInputStream(ByteArrayInputStream inputStream) {
         this.udpDataInputStream = inputStream;
     }
     

@@ -22,13 +22,21 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import net.neto_framework.PacketManager;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.packets.DisconnectPacket;
+import net.neto_framework.packets.EncryptionRequestPacket;
+import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
-import net.neto_framework.packets.HandshakeResponsePacket;
 import net.neto_framework.packets.NetoServerEventListener;
+import net.neto_framework.packets.SuccessPacket;
 import net.neto_framework.server.exceptions.ServerException;
 
 /**
@@ -42,6 +50,11 @@ public class Server {
      * Default backlog value for TCP server socket.
      */
     public static final int DEFAULT_BACKLOG = 50;
+    
+    /**
+     * Default key size for RSA key pair.
+     */
+    public static final int DEFAULT_KEYSIZE = 2048;
 
     /**
      * The {@link net.neto_framework.PacketManager PacketManager}.
@@ -78,6 +91,16 @@ public class Server {
     private final SocketAddress address;
     
     /**
+     * The public key used for encrypting shared secret.
+     */
+    private PublicKey publicKey;
+    
+    /**
+     * The private key pair used for decrypting shared secret.
+     */
+    private PrivateKey privateKey;
+    
+    /**
      * The TCP backlog value.
      */
     private int backlog;
@@ -104,7 +127,9 @@ public class Server {
     public Server(SocketAddress address) {
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
-        this.packetManager.registerPacket(HandshakeResponsePacket.class);
+        this.packetManager.registerPacket(EncryptionRequestPacket.class);
+        this.packetManager.registerPacket(EncryptionResponsePacket.class);
+        this.packetManager.registerPacket(SuccessPacket.class);
         this.packetManager.registerPacket(DisconnectPacket.class);
         
         this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
@@ -138,6 +163,18 @@ public class Server {
                         this.address.getInetAddress());
             } catch (SocketException e) {
                 throw new ServerException("Failed to start server on given address.", e);
+            }
+            
+            try {
+                KeyPairGenerator keyPairGenerator= KeyPairGenerator.getInstance("RSA");
+                keyPairGenerator.initialize(Server.DEFAULT_KEYSIZE,
+                        SecureRandom.getInstanceStrong());
+                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+                this.publicKey = keyPair.getPublic();
+                this.privateKey = keyPair.getPrivate();
+            } catch (NoSuchAlgorithmException e) {
+                throw new ServerException("Failed to start server due to unknown encryption"
+                        + " algorithm.", e);
             }
             
             (new Thread(this.tcpConnectionHandler)).start();
@@ -190,6 +227,20 @@ public class Server {
      */
     public SocketAddress getAddress() {
         return this.address;
+    }
+    
+    /**
+     * @return Elliptic Curve public key.
+     */
+    public PublicKey getPublicKey() {
+        return this.publicKey;
+    }
+    
+    /**
+     * @return Elliptic Curve private key.
+     */
+    public PrivateKey getPrivateKey() {
+        return this.privateKey;
     }
 
     /**
