@@ -23,7 +23,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The encryption request packet is sent from server -> client after the server has received a
+ * The encryption request packet is sent from server to client after the server has received a
  * handshake. This packet contains the servers public key that should be used to encrypt the shared
  * secret when sending the encryption response.
  *

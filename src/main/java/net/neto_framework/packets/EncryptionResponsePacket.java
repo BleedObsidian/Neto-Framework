@@ -23,7 +23,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The encryption response packet is sent client -> server and contains the shared secret encrypted
+ * The encryption response packet is sent client to server and contains the shared secret encrypted
  * with the servers public key. This packet also contains a random byte that should be returned
  * by the server exactly.
  *

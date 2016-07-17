@@ -22,7 +22,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The handshake packet is the first packet send from client -> server.
+ * The handshake packet is the first packet send from client to server.
  *
  * @author Jesse Prescott (BleedObsidian)
  */

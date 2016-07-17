@@ -30,7 +30,7 @@ public interface Packet {
      * Send packet to connection.
      * 
      * @param connection {@link net.neto_framework.Connection Connection}.
-     * @throws java.io.IOException
+     * @throws java.io.IOException IOException.
      */
     public void send(Connection connection) throws IOException;
     
@@ -38,29 +38,9 @@ public interface Packet {
      * Receive packet from connection.
      * 
      * @param connection {@link net.neto_framework.Connection Connection}.
-     * @throws java.io.IOException
+     * @throws java.io.IOException IOException.
      */
     public void receive(Connection connection) throws IOException;
-
-    /**
-     * Fired when this packet is received server-side.
-     * 
-     * @param server Running instance of {@link net.neto_framework.server.Server Server}.
-     * @param clientConnection The {@link net.neto_framework.server.ClientConnection
-     *                         ClientConnection}.
-     * @param packet The {@link net.neto_framework.Packet Packet} instance.
-     */
-    //public void onServerReceive(Server server, ClientConnection clientConnection, Packet packet);
-    
-    /**
-     * Fired when this packet is received client-side.
-     * 
-     * @param client Running instance of {@link net.neto_framework.client.Client Client}.
-     * @param serverConnection The {@link net.neto_framework.client.ServerConnection
-     *                         ServerConnection}.
-     * @param packet The {@link net.neto_framework.Packet Packet} instance.
-     */
-    //public void onClientReceive(Client client, ServerConnection serverConnection, Packet packet);
 
     /**
      * @return Unique packet ID.

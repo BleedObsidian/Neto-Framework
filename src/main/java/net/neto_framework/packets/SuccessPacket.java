@@ -23,7 +23,7 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The success packet is sent from server -> client and is the final packet involved in the
+ * The success packet is sent from server to client and is the final packet involved in the
  * handshake process. This packet contains the UUID of the client given by the server and the random
  * short from the client. This packet is fully encrypted at this point via the connection handler,
  * if the UUID of a client is obtained by a malicious user, it could be used to send UDP packets
@@ -57,7 +57,7 @@ public class SuccessPacket implements Packet {
     
     /**
      * 
-     * @return 
+     * @return The UUID of the client.
      */
     public String getUUID() {
         return this.uuid;

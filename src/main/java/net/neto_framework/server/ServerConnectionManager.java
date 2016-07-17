@@ -163,7 +163,7 @@ public class ServerConnectionManager {
     }
     
     /**
-     * @return ArrayList<ClientConnection>.
+     * @return ArrayList.
      */
     public ArrayList<ClientConnection> getClientConnections() {
         ArrayList<ClientConnection> values = new ArrayList<>();
