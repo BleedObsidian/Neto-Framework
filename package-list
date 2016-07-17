@@ -7,6 +7,7 @@ net.neto_framework.client.event.events
 net.neto_framework.client.exceptions
 net.neto_framework.event
 net.neto_framework.exceptions
+net.neto_framework.packets
 net.neto_framework.server
 net.neto_framework.server.event
 net.neto_framework.server.event.events
