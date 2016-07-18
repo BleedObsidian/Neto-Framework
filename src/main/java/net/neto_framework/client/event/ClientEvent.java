@@ -33,19 +33,19 @@ public class ClientEvent {
     private final Client client;
     
     /**
-     * ClientEvents.
+     * Event Type.
      */
-    private final ClientEvents event;
+    private final ClientEvents eventType;
 
     /**
      * New ClientEvent.
      * 
      * @param client Client.
-     * @param event ClientEvents.
+     * @param eventType Which {@link ClientEvents Event} this represents.
      */
-    public ClientEvent(Client client, ClientEvents event) {
+    public ClientEvent(Client client, ClientEvents eventType) {
         this.client = client;
-        this.event = event;
+        this.eventType = eventType;
     }
 
     /**
@@ -56,10 +56,10 @@ public class ClientEvent {
     }
 
     /**
-     * @return ClientEvents.
+     * @return Which {@link ServerEvents Event} this represents.
      */
-    public ClientEvents getEvent() {
-        return this.event;
+    public ClientEvents getEventType() {
+        return this.eventType;
     }
     
     /**

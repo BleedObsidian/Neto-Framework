@@ -33,17 +33,17 @@ public class ServerEvent {
     private final Server server;
     
     /**
-     * Event.
+     * Event Type.
      */
-    private final ServerEvents event;
+    private final ServerEvents eventType;
 
     /**
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
-     * @param event Which {@link ServerEvents Event} this represents.
+     * @param eventType Which {@link ServerEvents Event} this represents.
      */
-    public ServerEvent(Server server, ServerEvents event) {
+    public ServerEvent(Server server, ServerEvents eventType) {
         this.server = server;
-        this.event = event;
+        this.eventType = eventType;
     }
 
     /**
@@ -56,8 +56,8 @@ public class ServerEvent {
     /**
      * @return Which {@link ServerEvents Event} this represents.
      */
-    public ServerEvents getEvent() {
-        return this.event;
+    public ServerEvents getEventType() {
+        return this.eventType;
     }
     
     /**

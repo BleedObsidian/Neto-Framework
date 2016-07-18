@@ -93,7 +93,7 @@ public class EventHandler {
      * @param event {@link net.neto_framework.server.event.ServerEvent ServerEvent}.
      */
     public void callEvent(ServerEvent event) {
-        switch (event.getEvent()) {
+        switch (event.getEventType()) {
         case RECEIVE_PACKET:
             this.serverEventListeners.stream().forEach((listener) -> {
                 listener.onReceivePacket(
@@ -130,7 +130,7 @@ public class EventHandler {
      * @param event {@link net.neto_framework.client.event.ClientEvent ClientEvent}.
      */
     public void callEvent(ClientEvent event) {
-        switch (event.getEvent()) {
+        switch (event.getEventType()) {
         case RECEIVE_PACKET:
             this.clientEventListeners.stream().forEach((listener) -> {
                 listener.onReceivePacket(
