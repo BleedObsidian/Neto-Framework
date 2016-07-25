@@ -21,6 +21,7 @@ package net.neto_framework.server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.UUID;
 import javax.crypto.SecretKey;
@@ -55,6 +56,11 @@ public class ClientConnection implements Runnable {
      * TCP connection.
      */
     private final Connection tcpConnection;
+    
+    /**
+     * A HashMap that can be used to store anything about clients.
+     */
+    private final HashMap<String, Object> storage;
     
     /**
      * UDP connection.
@@ -95,6 +101,7 @@ public class ClientConnection implements Runnable {
         this.server = server;
         this.uuid = uuid;
         this.tcpConnection = tcpConnection;
+        this.storage = new HashMap<>();
         this.isConnected = true;
     }
 
@@ -234,6 +241,26 @@ public class ClientConnection implements Runnable {
     public void enableEncryption() {
         this.tcpConnection.enableEncryption(this.secretKey, this.ivParameterSpec);
         this.udpConnection.enableEncryption(this.secretKey, this.ivParameterSpec);
+    }
+    
+    /**
+     * Store data with given key.
+     * 
+     * @param key A key to identify this data.
+     * @param data Data to be stored.
+     */
+    public void store(String key, Object data) {
+        this.storage.put(key, data);
+    }
+    
+    /**
+     * Retrieve data with given key.
+     * 
+     * @param key The key.
+     * @return Data (May be null).
+     */
+    public Object retrieve(String key) {
+        return this.storage.get(key);
     }
     
     /**
