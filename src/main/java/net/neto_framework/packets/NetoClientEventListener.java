@@ -168,6 +168,7 @@ public class NetoClientEventListener extends ClientEventListener {
             
             if(packet.getRandom() == event.getClient().getRandom()) {
                 event.getClient().setUUID(UUID.fromString(packet.getUUID()));
+                event.getClient().setHandshakeCompleted(true);
             } else {
                 PacketException exception = new PacketException("Received incorrect random from"
                         + " server.");

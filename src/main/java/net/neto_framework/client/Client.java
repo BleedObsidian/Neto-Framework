@@ -93,6 +93,11 @@ public class Client {
      */
     private volatile boolean isConnected;
     
+     /**
+     * If client has completed the handshake process with the server.
+     */
+    private volatile boolean isHandshakeComplete;
+    
     /**
      * The public key from the server used by the client to encrypt the shared secret.
      */
@@ -237,6 +242,10 @@ public class Client {
                     }
                 }
             })).start();
+            
+            while(!this.isHandshakeComplete) {
+                // Block until handshake is completed.
+            }
         }
     }
     
@@ -335,6 +344,13 @@ public class Client {
      */
     public boolean isConnected() {
         return this.isConnected;
+    }
+    
+    /**
+     * @param value If handshake completed.
+     */
+    public void setHandshakeCompleted(boolean value) {
+        this.isHandshakeComplete = value;
     }
     
     /**
