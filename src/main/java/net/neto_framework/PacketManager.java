@@ -22,6 +22,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import net.neto_framework.client.Client;
 import net.neto_framework.client.ServerConnection;
+import net.neto_framework.packets.DisconnectPacket;
+import net.neto_framework.packets.EncryptionRequestPacket;
+import net.neto_framework.packets.EncryptionResponsePacket;
+import net.neto_framework.packets.HandshakePacket;
+import net.neto_framework.packets.SuccessPacket;
 import net.neto_framework.server.ClientConnection;
 import net.neto_framework.server.Server;
 
@@ -92,9 +97,21 @@ public class PacketManager {
                 packet.receive(client.getUDPConnection());
             }
             
-            server.getEventHandler().callEvent(
-                    new net.neto_framework.server.event.events.ReceivePacketEvent(
-                            server, client, packet));
+            net.neto_framework.server.event.events.ReceivePacketEvent event =
+                    new net.neto_framework.server.event.events.ReceivePacketEvent(server,
+                            client, packet);
+            
+            // Do not call receive packet event for default packets built-in.
+            if(id == new HandshakePacket().getId()
+                    || id == new EncryptionRequestPacket().getId()
+                    || id == new EncryptionResponsePacket().getId()
+                    || id == new SuccessPacket().getId()
+                    || id == new DisconnectPacket().getId()) {
+                server.getEventHandler().getDefaultServerEventListener().onReceivePacket(event);
+                return;
+            }
+            
+            server.getEventHandler().callEvent(event);
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {
@@ -123,9 +140,21 @@ public class PacketManager {
                 packet.receive(serverConnection.getUDPConnection());
             }
             
-            client.getEventHandler().callEvent(
-                    new net.neto_framework.client.event.events.ReceivePacketEvent(
-                            client, serverConnection, packet));
+            net.neto_framework.client.event.events.ReceivePacketEvent event =
+                    new net.neto_framework.client.event.events.ReceivePacketEvent(client,
+                            serverConnection, packet);
+            
+            // Do not call receive packet event for default packets built-in.
+            if(id == new HandshakePacket().getId()
+                    || id == new EncryptionRequestPacket().getId()
+                    || id == new EncryptionResponsePacket().getId()
+                    || id == new SuccessPacket().getId()
+                    || id == new DisconnectPacket().getId()) {
+                client.getEventHandler().getDefaultClientEventListener().onReceivePacket(event);
+                return;
+            }
+            
+            client.getEventHandler().callEvent(event);
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {

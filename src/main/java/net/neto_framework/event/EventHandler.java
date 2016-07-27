@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
 import net.neto_framework.client.event.events.DisconnectEvent;
+import net.neto_framework.packets.NetoClientEventListener;
+import net.neto_framework.packets.NetoServerEventListener;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ClientConnectEvent;
@@ -149,5 +151,31 @@ public class EventHandler {
         });
             break;
         }
+    }
+    
+    /**
+     * @return The built-in client event listener.
+     */
+    public NetoClientEventListener getDefaultClientEventListener() {
+        for(ClientEventListener listener : this.clientEventListeners) {
+            if(listener instanceof NetoClientEventListener) {
+                return (NetoClientEventListener) listener;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * @return The built-in server event listener.
+     */
+    public NetoServerEventListener getDefaultServerEventListener() {
+        for(ServerEventListener listener : this.serverEventListeners) {
+            if(listener instanceof NetoServerEventListener) {
+                return (NetoServerEventListener) listener;
+            }
+        }
+        
+        return null;
     }
 }

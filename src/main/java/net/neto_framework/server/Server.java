@@ -46,6 +46,8 @@ import net.neto_framework.server.exceptions.ServerException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class Server {
+    //TODO: Add support to prevent packet repeating.
+    
     /**
      * Default backlog value for TCP server socket.
      */

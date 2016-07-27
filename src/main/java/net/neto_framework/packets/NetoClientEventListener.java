@@ -189,4 +189,11 @@ public class NetoClientEventListener extends ClientEventListener {
             event.getClient().getEventHandler().callEvent(disconnectEvent);
         }
     }
+    
+    @Override
+    public void onPacketException(PacketExceptionEvent event) {
+        if(!event.getClient().isHandshakeCompleted()) {
+            event.getClient().setHandshakeException(event.getPacketException());
+        }
+    }
 }

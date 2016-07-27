@@ -99,6 +99,11 @@ public class Client {
     private volatile boolean isHandshakeComplete;
     
     /**
+     * Used to store the PacketException if one occurs during the handshake process.
+     */
+    private volatile PacketException handshakeException;
+    
+    /**
      * The public key from the server used by the client to encrypt the shared secret.
      */
     private PublicKey publicKey;
@@ -245,6 +250,12 @@ public class Client {
             
             while(!this.isHandshakeComplete) {
                 // Block until handshake is completed.
+                
+                // Check if handshake process failed.
+                if(this.handshakeException != null) {
+                    throw new ClientConnectException("Failed to complete handshake process.",
+                            this.handshakeException);
+                }
             }
         }
     }
@@ -347,10 +358,24 @@ public class Client {
     }
     
     /**
+     * @return If handshake completed.
+     */
+    public boolean isHandshakeCompleted() {
+        return this.isHandshakeComplete;
+    }
+    
+    /**
      * @param value If handshake completed.
      */
     public void setHandshakeCompleted(boolean value) {
         this.isHandshakeComplete = value;
+    }
+    
+    /**
+     * @param exception The PacketException that occurred during the handshake process.
+     */
+    public void setHandshakeException(PacketException exception) {
+        this.handshakeException = exception;
     }
     
     /**

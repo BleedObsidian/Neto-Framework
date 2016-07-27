@@ -77,7 +77,8 @@ public class ServerConnectionManager {
      */
     public ClientConnection addClientConnection(Server server, Socket socket) {
         UUID uuid = UUID.randomUUID();
-        ClientConnection clientConnection = new ClientConnection(server, uuid, new Connection(socket));
+        ClientConnection clientConnection = new ClientConnection(server, uuid,
+                new Connection(socket));
         
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
