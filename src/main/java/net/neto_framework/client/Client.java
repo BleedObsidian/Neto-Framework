@@ -212,6 +212,7 @@ public class Client {
                             connection.setUdpDataInputStream(inputStream);
                             int packetId = connection.receiveInteger();
                             UUID uuid = UUID.fromString(connection.receiveString());
+                            long timestamp = connection.receiveLong();
 
                             if(!Client.this.packetManager.hasPacket(packetId)) {
                                 PacketException exception = new PacketException("Unkown packet"
@@ -224,8 +225,15 @@ public class Client {
                             if(Client.this.uuid != null | Client.this.uuid.equals(uuid)) {
                                 Client.this.serverConnection.getUDPConnection().
                                         setUdpDataInputStream(inputStream);
-                                Client.this.packetManager.receive(Client.this, packetId,
-                                        Client.this.serverConnection, Protocol.UDP);
+                                
+                                if((System.currentTimeMillis() - timestamp) > 
+                                        Connection.REPLAY_WINDOW) {
+                                    Client.this.packetManager.receive(Client.this, packetId,
+                                            Client.this.serverConnection, Protocol.UDP, true);
+                                } else {
+                                   Client.this.packetManager.receive(Client.this, packetId,
+                                            Client.this.serverConnection, Protocol.UDP, false); 
+                                }
                             } else {
                                 PacketException exception = new PacketException("UUID does not "
                                         + "match on received packet.");

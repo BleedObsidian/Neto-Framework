@@ -83,11 +83,18 @@ public class ServerUDPConnectionHandler extends Thread {
                 }
                 
                 UUID uuid = UUID.fromString(connection.receiveString());
+                long timestamp = connection.receiveLong();
                 
                 if(this.server.getConnectionManager().hasClientConnection(uuid)) {
                     client.getUDPConnection().setUdpDataInputStream(inputStream);
-                    this.server.getPacketManager().receive(this.server, packetId, client,
-                            Protocol.UDP);
+                    
+                    if((System.currentTimeMillis() - timestamp) > Connection.REPLAY_WINDOW) {
+                        this.server.getPacketManager().receive(this.server, packetId, client,
+                                Protocol.UDP, true);
+                    } else {
+                        this.server.getPacketManager().receive(this.server, packetId, client,
+                                Protocol.UDP, false);
+                    }
                 } else {
                     PacketException exception = new PacketException("Packet received from unkown"
                             + " client.");

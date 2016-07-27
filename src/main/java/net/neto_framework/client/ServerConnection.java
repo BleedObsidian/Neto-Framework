@@ -71,10 +71,12 @@ public class ServerConnection implements Runnable {
         while (this.client.isConnected()) {
             try {
                 int packetId = this.tcpConnection.receiveInteger();
+                long timestamp = 0;
                 String uuidString;
                 
                 if(this.client.getUUID() != null) {
                     uuidString = this.tcpConnection.receiveString();
+                    timestamp = this.tcpConnection.receiveLong();
                     
                     if(!this.client.getUUID().toString().equals(uuidString)) {
                         if(packetId != 0 && !uuidString.equals("")) {
@@ -100,8 +102,14 @@ public class ServerConnection implements Runnable {
                 }
                 
                 if(this.client.getPacketManager().hasPacket(packetId)) {
-                    this.client.getPacketManager().receive(this.client, packetId, this,
-                            Protocol.TCP);
+                    if(this.client.getUUID() != null &&
+                            (System.currentTimeMillis() - timestamp) > Connection.REPLAY_WINDOW) {
+                        this.client.getPacketManager().receive(this.client, packetId, this,
+                                Protocol.TCP, true);
+                    } else {
+                        this.client.getPacketManager().receive(this.client, packetId, this,
+                                Protocol.TCP, false);
+                    }
                 } else {
                     PacketException exception = new PacketException("Unkown packet received.");
                     PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.client,
@@ -147,12 +155,14 @@ public class ServerConnection implements Runnable {
 
                 if(this.client.getUUID() != null) {
                     this.tcpConnection.sendString(this.client.getUUID().toString());
+                    this.tcpConnection.sendLong(System.currentTimeMillis());
                 }
 
                 packet.send(this.tcpConnection);
             } else {
                 this.udpConnection.sendInteger(packet.getId());
                 this.udpConnection.sendString(this.client.getUUID().toString());
+                this.udpConnection.sendLong(System.currentTimeMillis());
                 packet.send(this.udpConnection);
                 byte[] data = this.udpConnection.getUdpData();
                 data = Base64.getEncoder().withoutPadding().encode(data);

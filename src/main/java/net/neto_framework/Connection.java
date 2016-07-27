@@ -47,6 +47,11 @@ public final class Connection {
      * connection is also using the Neto-Framework.
      */
     public static String MAGIC_STRING = "SDLJhs34jlDdj89";
+    
+    /**
+     * The window time allowed to prevent replay attacks.
+     */
+    public static long REPLAY_WINDOW = 1000;
 
     /**
      * TCP Socket of connection.

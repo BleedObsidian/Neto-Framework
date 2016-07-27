@@ -84,9 +84,11 @@ public class PacketManager {
      * @param client The {@link net.neto_framework.server.ClientConnection ClientConnection} that
      *               the packet is from.
      * @param protocol The {@link net.neto_framework.Protocol Protocol} the packet is in.
+     * @param discard Pull the data out of the stream but discard the packet.
      * @throws IOException If fails to receive packet.
      */
-    public void receive(Server server, int id, ClientConnection client, Protocol protocol)
+    public void receive(Server server, int id, ClientConnection client, Protocol protocol,
+            boolean discard)
             throws IOException {
         try {
             Packet packet = this.packets.get(id).getClass().newInstance();
@@ -95,6 +97,10 @@ public class PacketManager {
                 packet.receive(client.getTCPConnection());
             } else {
                 packet.receive(client.getUDPConnection());
+            }
+            
+            if(discard) {
+                return;
             }
             
             net.neto_framework.server.event.events.ReceivePacketEvent event =
@@ -127,9 +133,11 @@ public class PacketManager {
      * @param serverConnection The {@link net.neto_framework.client.ServerConnection
      *                         ServerConnection}.
      * @param protocol The {@link net.neto_framework.Protocol Protocol} the packet is in.
+     * @param discard Pull the data out of the stream but discard the packet.
      * @throws IOException If fails to receive packet.
      */
-    public void receive(Client client, int id, ServerConnection serverConnection, Protocol protocol)
+    public void receive(Client client, int id, ServerConnection serverConnection, Protocol protocol,
+            boolean discard)
             throws IOException {
         try {
             Packet packet = this.packets.get(id).getClass().newInstance();
@@ -138,6 +146,10 @@ public class PacketManager {
                 packet.receive(serverConnection.getTCPConnection());
             } else {
                 packet.receive(serverConnection.getUDPConnection());
+            }
+            
+            if(discard) {
+                return;
             }
             
             net.neto_framework.client.event.events.ReceivePacketEvent event =
