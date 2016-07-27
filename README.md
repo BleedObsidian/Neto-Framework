@@ -3,6 +3,7 @@ Neto-Framework is a simple and extremely lightweight NIO framework. It allows yo
 
 #### Features
 - A hybrid triple DES and RSA encryption system.
+- Replay attack prevention.
 - Pick and choose event listening.
 - Fully customizable packet structure.
 - Error handling.
