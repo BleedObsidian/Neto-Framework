@@ -95,11 +95,6 @@ public final class Connection {
     private SecretKey secretKey;
     
     /**
-     * Cipher used for encryption/decryption.
-     */
-    private Cipher cipher;
-    
-    /**
      * IvParameterSpec used for cipher.
      */
     private IvParameterSpec iv;
@@ -145,10 +140,17 @@ public final class Connection {
      * @param data Byte array data.
      * @throws IOException If failed to send
      */
-    public synchronized void send(byte[] data) throws IOException {
+    public void send(byte[] data) throws IOException {
         if(this.isEncrypted) {
             try {
-                this.cipher.init(Cipher.ENCRYPT_MODE, this.secretKey, this.iv);
+                Cipher cipher;
+                try {
+                    cipher = Cipher.getInstance("DESede/CFB8/NoPadding");
+                } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    throw new RuntimeException("Failed to enable encryptin on connection.", e);
+                }
+                
+                cipher.init(Cipher.ENCRYPT_MODE, this.secretKey, this.iv);
                 data = cipher.doFinal(data);
             } catch (InvalidKeyException | InvalidAlgorithmParameterException |
                     IllegalBlockSizeException | BadPaddingException e) {
@@ -170,7 +172,7 @@ public final class Connection {
      * @return Byte array data.
      * @throws IOException If failed to read.
      */
-    public synchronized byte[] receive(byte[] buffer) throws IOException {
+    public byte[] receive(byte[] buffer) throws IOException {
         if (this.protocol == Protocol.TCP) {
             if(!this.tcpSocket.isInputShutdown()) {
                 this.tcpSocket.getInputStream().read(buffer);
@@ -183,8 +185,15 @@ public final class Connection {
         
         if(this.isEncrypted) {
             try {
-                this.cipher.init(Cipher.DECRYPT_MODE, this.secretKey, this.iv);
-                buffer = this.cipher.doFinal(buffer);
+                Cipher cipher;
+                try {
+                    cipher = Cipher.getInstance("DESede/CFB8/NoPadding");
+                } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    throw new RuntimeException("Failed to enable encryptin on connection.", e);
+                }
+                
+                cipher.init(Cipher.DECRYPT_MODE, this.secretKey, this.iv);
+                buffer = cipher.doFinal(buffer);
             } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | 
                     InvalidAlgorithmParameterException e) {
                 throw new IOException("Failed to decrypt data when reading.", e);
@@ -202,14 +211,8 @@ public final class Connection {
      */
     public void enableEncryption(SecretKey secretKey, IvParameterSpec ivParameterSpec) {
         this.secretKey = secretKey;
-        
-        try {
-            this.cipher = Cipher.getInstance("DESede/CFB8/NoPadding");
-            this.iv = ivParameterSpec;
-            this.isEncrypted = true;
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            throw new RuntimeException("Failed to enable encryptin on connection.", e);
-        }
+        this.iv = ivParameterSpec;
+        this.isEncrypted = true;
     }
     
     /**
