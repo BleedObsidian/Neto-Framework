@@ -68,6 +68,11 @@ public class ClientConnection implements Runnable {
     private Connection udpConnection;
     
     /**
+     * The UDP port number the client is sending packets from.
+     */
+    private int udpPort;
+    
+    /**
      * The secret key used for packet encryption.
      */
     private SecretKey secretKey;
@@ -278,9 +283,11 @@ public class ClientConnection implements Runnable {
      * telling the server what port to communicate to the client with.
      * 
      * @param udpConnection UDP {@link net.neto_framework.Connection Connection}.
+     * @param udpPort The UDP port number the client is sending packets from.
      */
-    public void addUdpConnection(Connection udpConnection) {
+    public void addUdpConnection(Connection udpConnection, int udpPort) {
         this.udpConnection = udpConnection;
+        this.udpPort = udpPort;
     }
     
     /**
@@ -365,5 +372,12 @@ public class ClientConnection implements Runnable {
      */
     public Connection getUDPConnection() {
         return this.udpConnection;
+    }
+    
+    /**
+     * @return The UDP port number the client is sending packets from.
+     */
+    public int getClientUdpPort() {
+        return this.udpPort;
     }
 }

@@ -151,11 +151,13 @@ public class ServerConnectionManager {
      * Get ClientConnection from given IP address.
      * 
      * @param address InetAddress
+     * @param clientUdpPort The UDP port number the client is sending packets from.
      * @return Connection. (May be null)
      */
-    public ClientConnection getClientConnection(InetAddress address) {
+    public ClientConnection getClientConnection(InetAddress address, int clientUdpPort) {
         for(ClientConnection connection : this.connections.values()) {
-            if(connection.getTCPConnection().getTCPSocket().getInetAddress().equals(address)) {
+            if(connection.getTCPConnection().getTCPSocket().getInetAddress().equals(address) &&
+                    connection.getClientUdpPort() == clientUdpPort) {
                 return connection;
             }
         }

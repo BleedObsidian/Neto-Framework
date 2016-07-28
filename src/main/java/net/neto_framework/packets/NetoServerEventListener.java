@@ -72,7 +72,7 @@ public class NetoServerEventListener extends ServerEventListener {
                 Connection udpConnection = new Connection(event.getServer().getUdpSocket(),
                         event.getClientConnection().getTCPConnection().getTCPSocket().
                                 getInetAddress(), packet.getUdpPort());
-                event.getClientConnection().addUdpConnection(udpConnection);
+                event.getClientConnection().addUdpConnection(udpConnection, packet.getUdpPort());
 
                 event.getServer().getConnectionManager().onConnectionValidated(
                         event.getClientConnection().getUUID());
