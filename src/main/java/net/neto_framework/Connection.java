@@ -71,6 +71,7 @@ public final class Connection {
     /**
      * Port of connection.
      */
+    //TODO: Remove?
     private final int port;
     
     /**
@@ -144,7 +145,7 @@ public final class Connection {
      * @param data Byte array data.
      * @throws IOException If failed to send
      */
-    public void send(byte[] data) throws IOException {
+    public synchronized void send(byte[] data) throws IOException {
         if(this.isEncrypted) {
             try {
                 this.cipher.init(Cipher.ENCRYPT_MODE, this.secretKey, this.iv);
@@ -169,7 +170,7 @@ public final class Connection {
      * @return Byte array data.
      * @throws IOException If failed to read.
      */
-    public byte[] receive(byte[] buffer) throws IOException {
+    public synchronized byte[] receive(byte[] buffer) throws IOException {
         if (this.protocol == Protocol.TCP) {
             if(!this.tcpSocket.isInputShutdown()) {
                 this.tcpSocket.getInputStream().read(buffer);
