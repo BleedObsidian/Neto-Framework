@@ -71,6 +71,11 @@ public class ServerUDPConnectionHandler extends Thread {
                         dataPacket.getAddress(), dataPacket.getPort());
                 ClientConnection client = this.server.getConnectionManager().
                         getClientConnection(dataPacket.getAddress(), dataPacket.getPort());
+                
+                if(client == null) {
+                    return;
+                }
+                
                 connection.enableEncryption(client.getSecretKey(), client.getIvParameterSpec());
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
                 connection.setUdpDataInputStream(inputStream);
