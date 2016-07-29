@@ -137,7 +137,7 @@ public class ClientConnection implements Runnable {
 
                     this.disconnect(false);
                     ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                            ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                            ClientDisconnectReason.EXCEPTION, this, exception);
                     this.server.getEventHandler().callEvent(event);
                     break;
                 } else {
@@ -153,7 +153,7 @@ public class ClientConnection implements Runnable {
                 
                 this.disconnect(false);
                 ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                        ClientDisconnectReason.EXCEPTION, this, exception);
                 this.server.getEventHandler().callEvent(event);
                 break;
             }
@@ -175,7 +175,7 @@ public class ClientConnection implements Runnable {
                     
                     this.disconnect(false);
                     ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                            ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                            ClientDisconnectReason.EXCEPTION, this, exception);
                     this.server.getEventHandler().callEvent(event);
                     break;
                 }
@@ -188,7 +188,7 @@ public class ClientConnection implements Runnable {
                 
                 this.disconnect(false);
                 ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                        ClientDisconnectReason.EXCEPTION, this.uuid, exception);
+                        ClientDisconnectReason.EXCEPTION, this, exception);
                 this.server.getEventHandler().callEvent(event);
                 break;
             }

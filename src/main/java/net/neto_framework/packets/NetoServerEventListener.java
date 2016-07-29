@@ -64,7 +64,7 @@ public class NetoServerEventListener extends ServerEventListener {
                     ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
                             event.getServer(), 
                             ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                            event.getClientConnection().getUUID(), exception);
+                            event.getClientConnection(), exception);
                     event.getServer().getEventHandler().callEvent(disconnectEvent);
                     return;
                 }
@@ -85,7 +85,7 @@ public class NetoServerEventListener extends ServerEventListener {
                 event.getClientConnection().disconnect();
                 ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),
                         ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                        event.getClientConnection().getUUID(), exception);
+                        event.getClientConnection(), exception);
                 event.getServer().getEventHandler().callEvent(disconnectEvent);
             }
         } else if(event.getPacket() instanceof EncryptionResponsePacket) {
@@ -123,7 +123,7 @@ public class NetoServerEventListener extends ServerEventListener {
                     ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
                             event.getServer(), 
                             ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                            event.getClientConnection().getUUID(), exception);
+                            event.getClientConnection(), exception);
                     event.getServer().getEventHandler().callEvent(disconnectEvent);
                 }
                 
@@ -137,7 +137,7 @@ public class NetoServerEventListener extends ServerEventListener {
                 event.getClientConnection().disconnect();
                 ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),
                         ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                        event.getClientConnection().getUUID(), exception);
+                        event.getClientConnection(), exception);
                 event.getServer().getEventHandler().callEvent(disconnectEvent);
             }
             
@@ -145,7 +145,7 @@ public class NetoServerEventListener extends ServerEventListener {
             event.getClientConnection().disconnect(false);
             ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),
                     ClientDisconnectEvent.ClientDisconnectReason.DISCONNECT_PACKET,
-                    event.getClientConnection().getUUID());
+                    event.getClientConnection());
             event.getServer().getEventHandler().callEvent(disconnectEvent);
         }
     }

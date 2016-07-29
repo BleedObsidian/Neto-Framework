@@ -17,7 +17,7 @@
  */
 package net.neto_framework.server.event.events;
 
-import java.util.UUID;
+import net.neto_framework.server.ClientConnection;
 import net.neto_framework.server.Server;
 import net.neto_framework.server.event.ServerEvent;
 
@@ -38,9 +38,9 @@ public class ClientDisconnectEvent extends ServerEvent {
     private final ClientDisconnectReason reason;
 
     /**
-     * The UUID of the client that was disconnected.
+     * The ClientConnection that was disconnected.
      */
-    private final UUID uuid;
+    private final ClientConnection client;
 
     /**
      * The exception that caused the client to be disconnected. This will be null if the reason is
@@ -52,15 +52,15 @@ public class ClientDisconnectEvent extends ServerEvent {
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
      * @param reason The {@link ClientDisconnectReason ClientDisconnectReason} that the client was
      *               disconnected.
-     * @param uuid The {@link java.util.UUID UUID} of the client that was disconnected.
+     * @param client The ClientConnection that was disconnected.
      * @param exception The exception that caused the client to be disconnected.
      */
-    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid,
-            Exception exception) {
+    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason,
+            ClientConnection client, Exception exception) {
         super(server, ServerEvents.CLIENT_DISCONNECT);
 
         this.reason = reason;
-        this.uuid = uuid;
+        this.client = client;
         this.exception = exception;
     }
 
@@ -68,13 +68,14 @@ public class ClientDisconnectEvent extends ServerEvent {
      * @param server Running instance of {@link net.neto_framework.server.Server Server}.
      * @param reason The {@link ClientDisconnectReason ClientDisconnectReason} that the client was
      *               disconnected.
-     * @param uuid The {@link java.util.UUID UUID} of the client that was disconnected.
+     * @param client The ClientConnection that was disconnected.
      */
-    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason, UUID uuid) {
+    public ClientDisconnectEvent(Server server, ClientDisconnectReason reason,
+            ClientConnection client) {
         super(server, ServerEvents.CLIENT_DISCONNECT);
 
         this.reason = reason;
-        this.uuid = uuid;
+        this.client = client;
         this.exception = null;
     }
 
@@ -86,11 +87,10 @@ public class ClientDisconnectEvent extends ServerEvent {
     }
 
     /**
-     * @return The UUID that was given to the {@link net.neto_framework.server.ClientConnection
-     *         ClientConnection}.
+     * @return The ClientConnection that was disconnected.
      */
-    public UUID getClientUUID() {
-        return this.uuid;
+    public ClientConnection getClientConnection() {
+        return this.client;
     }
 
     /**
