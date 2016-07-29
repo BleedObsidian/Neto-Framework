@@ -73,7 +73,11 @@ public class ServerUDPConnectionHandler extends Thread {
                         getClientConnection(dataPacket.getAddress(), dataPacket.getPort());
                 
                 if(client == null) {
-                    return;
+                    PacketException exception = new PacketException(
+                            "UDP Packet received from unkown source.");
+                    PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
+                    this.server.getEventHandler().callEvent(event);
+                    continue;
                 }
                 
                 connection.enableEncryption(client.getSecretKey(), client.getIvParameterSpec());
