@@ -36,13 +36,7 @@ import net.neto_framework.server.exceptions.ConnectionException;
  * @author BleedObsidian (Jesse Prescott)
  */
 public class ServerConnectionManager {
-    
-    /**
-     * The amount of time a client is allowed to complete the handshake process before getting
-     * kicked.
-     */
-    public static int HANDSHAKE_TIMEOUT = 10000;
-    
+     
     /**
      * Running instance of {@link net.neto_framework.server.Server Server}.
      */
@@ -92,7 +86,7 @@ public class ServerConnectionManager {
                         ServerConnectionManager.this.server, exception);
                 ServerConnectionManager.this.server.getEventHandler().callEvent(event);
             }
-        }, ServerConnectionManager.HANDSHAKE_TIMEOUT);
+        }, Connection.HANDSHAKE_TIMEOUT);
         clientConnection.setTimer(timer);
         
         this.pendingConnections.put(uuid, clientConnection);

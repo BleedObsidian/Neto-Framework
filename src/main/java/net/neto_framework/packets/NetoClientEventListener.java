@@ -40,9 +40,8 @@ import javax.crypto.spec.IvParameterSpec;
 import net.neto_framework.Protocol;
 import net.neto_framework.client.event.ClientEventListener;
 import net.neto_framework.client.event.events.DisconnectEvent;
-import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.event.events.ReceivePacketEvent;
-import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.client.exceptions.ClientConnectException;
 
 /**
  * A client event listener used to listen to built-in packets.
@@ -66,8 +65,8 @@ public class NetoClientEventListener extends ClientEventListener {
                     SecretKey secretKey = keyGenerator.generateKey();
                     event.getClient().setSecretKey(secretKey);
                 } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-                    PacketException exception = new PacketException("Received invalid public key"
-                            + " from server.", e);
+                    ClientConnectException exception = new ClientConnectException("Received invalid"
+                            + " public key from server.", e);
                     event.getClient().setHandshakeException(exception);
 
                     event.getClient().disconnect(false);
@@ -88,8 +87,8 @@ public class NetoClientEventListener extends ClientEventListener {
                             getEncoded());
                 } catch (NoSuchAlgorithmException | NoSuchPaddingException |
                         InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-                    PacketException exception = new PacketException("Failed to use public key form"
-                            + " server.", e);
+                    ClientConnectException exception = new ClientConnectException("Failed to use "
+                            + "public key form server.", e);
                     event.getClient().setHandshakeException(exception);
 
                     event.getClient().disconnect(false);
@@ -116,8 +115,8 @@ public class NetoClientEventListener extends ClientEventListener {
                     encryptedIv = cipher.doFinal(iv);
                 } catch (NoSuchAlgorithmException | NoSuchPaddingException |
                         InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-                    PacketException exception = new PacketException("Failed to use public key form"
-                            + " server.", e);
+                    ClientConnectException exception = new ClientConnectException("Failed to use"
+                            + " public key form server.", e);
                     event.getClient().setHandshakeException(exception);
 
                     event.getClient().disconnect(false);
@@ -136,8 +135,8 @@ public class NetoClientEventListener extends ClientEventListener {
                             Protocol.TCP);
                     event.getClient().getServerConnection().enableEncryption();
                 } catch (IOException e) {
-                    PacketException exception = new PacketException("Failed to send encryption"
-                            + " response.", e);
+                    ClientConnectException exception = new ClientConnectException("Failed to send"
+                            + " encryption response.", e);
                     event.getClient().setHandshakeException(exception);
 
                     event.getClient().disconnect(false);
@@ -147,7 +146,8 @@ public class NetoClientEventListener extends ClientEventListener {
                     event.getClient().getEventHandler().callEvent(disconnectEvent);
                 }
             } else {
-                PacketException exception = new PacketException("Incorrect magic string received.");
+                ClientConnectException exception = new ClientConnectException("Incorrect magic "
+                        + "string received.");
                 event.getClient().setHandshakeException(exception);
 
                 event.getClient().disconnect(false);
@@ -162,8 +162,8 @@ public class NetoClientEventListener extends ClientEventListener {
             if(packet.getRandom() == event.getClient().getRandom()) {
                 event.getClient().setUUID(UUID.fromString(packet.getUUID()));
             } else {
-                PacketException exception = new PacketException("Received incorrect random from"
-                        + " server.");
+                ClientConnectException exception = new ClientConnectException("Received incorrect"
+                        + " random from server.");
                 event.getClient().setHandshakeException(exception);
 
                 event.getClient().disconnect(false);
@@ -194,7 +194,7 @@ public class NetoClientEventListener extends ClientEventListener {
             try {
                 event.getClient().getUdpSocket().send(hashedSuccessPacket);
             } catch (IOException e) {
-                PacketException exception = new PacketException(
+                ClientConnectException exception = new ClientConnectException(
                         "Failed to send hashed success packet", e);
                 event.getClient().setHandshakeException(exception);
 
@@ -206,18 +206,12 @@ public class NetoClientEventListener extends ClientEventListener {
             }
             
             event.getClient().setHandshakeCompleted(true);
+            event.getClient().getTimer().cancel();
         } else if(event.getPacket() instanceof DisconnectPacket) {
             event.getClient().disconnect(false);
             DisconnectEvent disconnectEvent = new DisconnectEvent(event.getClient(),
                     DisconnectEvent.DisconnectReason.DISCONNECT_PACKET);
             event.getClient().getEventHandler().callEvent(disconnectEvent);
-        }
-    }
-    
-    @Override
-    public void onPacketException(PacketExceptionEvent event) {
-        if(!event.getClient().isHandshakeCompleted()) {
-            event.getClient().setHandshakeException(event.getPacketException());
         }
     }
 }

@@ -49,6 +49,12 @@ public final class Connection {
     public static String MAGIC_STRING = "SDLJhs34jlDdj89";
     
     /**
+     * The amount of time that is allowed to complete the handshake process before getting
+     * kicked.
+     */
+    public static int HANDSHAKE_TIMEOUT = 10000;
+    
+    /**
      * The window time allowed to prevent replay attacks.
      */
     public static long REPLAY_WINDOW = 1000;

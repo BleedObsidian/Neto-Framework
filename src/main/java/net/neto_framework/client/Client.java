@@ -28,6 +28,8 @@ import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -74,6 +76,11 @@ public class Client {
      * A random short sent to the server and must be received exactly in the success packet.
      */
     private final short random;
+    
+    /**
+     * Timer used to stop handshake process from hanging.
+     */
+    private final Timer timer;
 
     /**
      * TCP Socket.
@@ -101,9 +108,9 @@ public class Client {
     private volatile boolean isHandshakeComplete;
     
     /**
-     * Used to store the PacketException if one occurs during the handshake process.
+     * Used to store the ClientConnectException if one occurs during the handshake process.
      */
-    private volatile PacketException handshakeException;
+    private volatile ClientConnectException handshakeException;
     
     /**
      * The public key from the server used by the client to encrypt the shared secret.
@@ -140,6 +147,7 @@ public class Client {
         this.eventHandler = new EventHandler();
         this.eventHandler.registerClientEventListener(new NetoClientEventListener());
         this.address = address;
+        this.timer = new Timer();
         
         Random random = new Random();
         this.random = (short) random.nextInt(Short.MAX_VALUE + 1);
@@ -183,6 +191,16 @@ public class Client {
                 this.disconnect(false);
                 throw new ClientConnectException("Failed to send handshake packet.", e);
             }
+            
+            this.timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    ClientConnectException exception = new ClientConnectException("Server took to"
+                            + " long to complete handshake process.");
+                    Client.this.setHandshakeException(exception);
+                    Client.this.disconnect(false);
+                }
+            }, Connection.HANDSHAKE_TIMEOUT);
             
             (new Thread(new Runnable() {
                 @Override
@@ -354,6 +372,13 @@ public class Client {
     public short getRandom() {
         return this.random;
     }
+    
+    /**
+     * @return Timer used to stop handshake process from hanging.
+     */
+    public Timer getTimer() {
+        return this.timer;
+    }
 
     /**
      * @return TCP Socket. (Null if not using TCP as protocol or if the client
@@ -400,9 +425,9 @@ public class Client {
     }
     
     /**
-     * @param exception The PacketException that occurred during the handshake process.
+     * @param exception The ClientConnectException that occurred during the handshake process.
      */
-    public void setHandshakeException(PacketException exception) {
+    public void setHandshakeException(ClientConnectException exception) {
         this.handshakeException = exception;
     }
     
