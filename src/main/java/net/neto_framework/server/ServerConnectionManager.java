@@ -177,4 +177,17 @@ public class ServerConnectionManager {
         
         return values;
     }
+    
+    /**
+     * @return ArrayList.
+     */
+    public ArrayList<ClientConnection> getPendingClientConnections() {
+        ArrayList<ClientConnection> values = new ArrayList<>();
+        
+        this.pendingConnections.values().stream().forEach((connection) -> {
+            values.add(connection);
+        });
+        
+        return values;
+    }
 }

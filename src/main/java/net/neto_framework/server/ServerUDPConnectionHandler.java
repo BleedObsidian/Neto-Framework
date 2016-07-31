@@ -65,8 +65,23 @@ public class ServerUDPConnectionHandler extends Thread {
                 }
 
                 data = Arrays.copyOf(data, i + 1);
+                
+                // Check packet to see if it is a clients hashed success packet.
+                boolean isHash = false;
+                for(ClientConnection client :
+                        this.server.getConnectionManager().getPendingClientConnections()) {
+                    if(new String(client.getHashedSuccessPacket()).equals(new String(data))) {
+                        this.server.getConnectionManager().onConnectionValidated(client.getUUID());
+                        client.setClientUdpPort(dataPacket.getPort());
+                        client.setHandshakeCompleted(true);
+                        isHash = true;
+                        break;
+                    }
+                }
+                
+                if(isHash) { continue; }
+                
                 data = Base64.getDecoder().decode(data);
-
                 Connection connection = new Connection(this.server.getUdpSocket(),
                         dataPacket.getAddress(), dataPacket.getPort());
                 ClientConnection client = this.server.getConnectionManager().

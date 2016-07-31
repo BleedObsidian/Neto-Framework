@@ -19,13 +19,16 @@
 package net.neto_framework.packets;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.UUID;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -172,6 +175,40 @@ public class NetoClientEventListener extends ClientEventListener {
             } else {
                 PacketException exception = new PacketException("Received incorrect random from"
                         + " server.");
+                PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getClient(),
+                        exception);
+                event.getClient().getEventHandler().callEvent(packetEvent);
+
+                event.getClient().disconnect();
+                DisconnectEvent disconnectEvent = new DisconnectEvent(event.getClient(),
+                        DisconnectEvent.DisconnectReason.EXCEPTION, 
+                        exception);
+                event.getClient().getEventHandler().callEvent(disconnectEvent);
+            }
+            
+            // Hash success packet and sent it back to server over UDP.
+            String successPacket = event.getClient().getUUID().toString() +
+                    event.getClient().getRandom();
+            MessageDigest md = null;
+            
+            try {
+                md = MessageDigest.getInstance("SHA-512");
+                //md.update("TEST".getBytes());
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Unkown hashing algorithm.", e);
+            }
+            
+            byte[] data = md.digest(successPacket.getBytes());
+            data = Base64.getEncoder().withoutPadding().encode(data);
+            DatagramPacket hashedSuccessPacket = new DatagramPacket(data, data.length,
+                    event.getClient().getAddress().getInetAddress(),
+                    event.getClient().getAddress().getPort());
+            
+            try {
+                event.getClient().getUdpSocket().send(hashedSuccessPacket);
+            } catch (IOException e) {
+                PacketException exception = new PacketException(
+                        "Failed to send hashed success packet", e);
                 PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getClient(),
                         exception);
                 event.getClient().getEventHandler().callEvent(packetEvent);

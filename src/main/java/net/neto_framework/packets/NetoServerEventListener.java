@@ -20,7 +20,9 @@ package net.neto_framework.packets;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -72,10 +74,7 @@ public class NetoServerEventListener extends ServerEventListener {
                 Connection udpConnection = new Connection(event.getServer().getUdpSocket(),
                         event.getClientConnection().getTCPConnection().getTCPSocket().
                                 getInetAddress(), packet.getUdpPort());
-                event.getClientConnection().addUdpConnection(udpConnection, packet.getUdpPort());
-
-                event.getServer().getConnectionManager().onConnectionValidated(
-                        event.getClientConnection().getUUID());
+                event.getClientConnection().addUdpConnection(udpConnection);
             } else {
                 PacketException exception = new PacketException("Incorrect magic string received.");
                 PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getServer(),
@@ -109,9 +108,26 @@ public class NetoServerEventListener extends ServerEventListener {
                 successPacket.setUUID(event.getClientConnection().getUUID().toString());
                 successPacket.setRandom(packet.getRandom());
                 
+                // Store hashed version of packet.
+                String successPacketData = event.getClientConnection().getUUID().toString() +
+                        packet.getRandom();
+                MessageDigest md = null;
+            
+                try {
+                    md = MessageDigest.getInstance("SHA-512");
+                    //md.update("TEST".getBytes());
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException("Unkown hashing algorithm.", e);
+                }
+                
+                byte[] hashedSuccessPacketData = md.digest(successPacketData.getBytes());
+                hashedSuccessPacketData = Base64.getEncoder().withoutPadding()
+                        .encode(hashedSuccessPacketData);
+                
+                event.getClientConnection().setHashedSuccessPacket(hashedSuccessPacketData);
+                
                 try {
                     event.getClientConnection().sendPacket(successPacket, Protocol.TCP);
-                    event.getClientConnection().setHandshakeCompleted(true);
                 } catch (IOException e) {
                     PacketException exception = new PacketException("Faild to send success packet.",
                             e);

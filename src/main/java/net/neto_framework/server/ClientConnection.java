@@ -70,7 +70,7 @@ public class ClientConnection implements Runnable {
     /**
      * The UDP port number the client is sending packets from.
      */
-    private int udpPort;
+    private int clientUdpPort;
     
     /**
      * The secret key used for packet encryption.
@@ -81,6 +81,11 @@ public class ClientConnection implements Runnable {
      * The IV parameter spec used for ciphering.
      */
     private IvParameterSpec ivParameterSpec;
+    
+    /**
+     * The hashed success packet used to authenticate initial UDP packet from client.
+     */
+    private byte[] hashedSuccessPacket;
     
     /**
      * If the client is currently connected.
@@ -143,6 +148,20 @@ public class ClientConnection implements Runnable {
                 } else {
                     break;
                 }
+            }
+            
+            if(packetId != -1 && packetId != -3 && !this.isHandshakeCompleted) {
+                PacketException exception = new PacketException("Client tried to send a packet"
+                        + " before completing the handshake process.");
+                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server,
+                        exception, this.uuid);
+                this.server.getEventHandler().callEvent(packetEvent);
+
+                this.disconnect(false);
+                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                        ClientDisconnectReason.EXCEPTION, this, exception);
+                this.server.getEventHandler().callEvent(event);
+                break;
             }
             
             if(this.isHandshakeCompleted && !this.uuid.toString().equals(uuidString)) {
@@ -283,11 +302,9 @@ public class ClientConnection implements Runnable {
      * telling the server what port to communicate to the client with.
      * 
      * @param udpConnection UDP {@link net.neto_framework.Connection Connection}.
-     * @param udpPort The UDP port number the client is sending packets from.
      */
-    public void addUdpConnection(Connection udpConnection, int udpPort) {
+    public void addUdpConnection(Connection udpConnection) {
         this.udpConnection = udpConnection;
-        this.udpPort = udpPort;
     }
     
     /**
@@ -316,6 +333,21 @@ public class ClientConnection implements Runnable {
      */
     public void setIvParameterSpec(IvParameterSpec ivParameterSpec) {
         this.ivParameterSpec = ivParameterSpec;
+    }
+    
+    /**
+     * @return The hashed success packet used to authenticate initial UDP packet from client.
+     */
+    public byte[] getHashedSuccessPacket() {
+        return this.hashedSuccessPacket;
+    }
+    
+    /**
+     * @param hashedSuccessPacket The hashed success packet used to authenticate initial
+     *                            UDP packet from client.
+     */
+    public void setHashedSuccessPacket(byte[] hashedSuccessPacket) {
+        this.hashedSuccessPacket = hashedSuccessPacket;
     }
     
     /**
@@ -378,6 +410,13 @@ public class ClientConnection implements Runnable {
      * @return The UDP port number the client is sending packets from.
      */
     public int getClientUdpPort() {
-        return this.udpPort;
+        return this.clientUdpPort;
+    }
+    
+    /**
+     * @param clientUdpPort The UDP port number the client is sending packets from.
+     */
+    public void setClientUdpPort(int clientUdpPort) {
+        this.clientUdpPort = clientUdpPort;
     }
 }
