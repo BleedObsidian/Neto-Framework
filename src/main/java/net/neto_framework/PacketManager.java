@@ -20,13 +20,9 @@ package net.neto_framework;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import net.neto_framework.client.Client;
 import net.neto_framework.client.ServerConnection;
-import net.neto_framework.packets.DisconnectPacket;
-import net.neto_framework.packets.EncryptionRequestPacket;
-import net.neto_framework.packets.EncryptionResponsePacket;
-import net.neto_framework.packets.HandshakePacket;
-import net.neto_framework.packets.SuccessPacket;
 import net.neto_framework.server.ClientConnection;
 import net.neto_framework.server.Server;
 
@@ -41,17 +37,81 @@ public class PacketManager {
      * HashMap of all registered packets.
      */
     private final HashMap<Integer, Packet> packets = new HashMap<>();
+    
+    /**
+     * HashMap of all registered packets handlers for the server.
+     */
+    private final HashMap<Integer, ServerPacketHandler> serverPacketHandlers = new HashMap<>();
+    
+    /**
+     * HashMap of all registered packets handlers for the client.
+     */
+    private final HashMap<Integer, ClientPacketHandler> clientPacketHandlers = new HashMap<>();
 
     /**
-     * Register packet.
+     * Register packet for server.
      * 
+     * @param <T> A class that implements the Packet interface.
      * @param packetClass Packet class.
+     * @param packetHandler The handler for this packet.
      */
-    public void registerPacket(Class packetClass) {
+    public <T extends Packet> void registerPacket(Class<T> packetClass,
+            ServerPacketHandler<T> packetHandler) {
         
         Packet packet;
         try {
-            packet = (Packet) packetClass.newInstance();
+            packet = packetClass.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Packet class has a constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Packet illegal access.", e);
+        }
+        
+        if(!this.packets.containsKey(packet.getId()) && packet.getId() != 0) {
+            this.packets.put(packet.getId(), packet);
+            this.serverPacketHandlers.put(packet.getId(), packetHandler);
+        } else {
+            throw new RuntimeException("Packet ID is already being used or reserved.");
+        }
+    }
+    
+    /**
+     * Register packet for client.
+     * 
+     * @param <T> A class that implements the Packet interface.
+     * @param packetClass Packet class.
+     * @param packetHandler The handler for this packet.
+     */
+    public <T extends Packet> void registerPacket(Class<T> packetClass,
+            ClientPacketHandler<T> packetHandler) {
+        
+        Packet packet;
+        try {
+            packet = packetClass.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Packet class has a constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Packet illegal access.", e);
+        }
+        
+        if(!this.packets.containsKey(packet.getId()) && packet.getId() != 0) {
+            this.packets.put(packet.getId(), packet);
+            this.clientPacketHandlers.put(packet.getId(), packetHandler);
+        } else {
+            throw new RuntimeException("Packet ID is already being used or reserved.");
+        }
+    }
+    
+    /**
+     * Register packet without a handler.
+     * 
+     * @param <T> A class that implements the Packet interface.
+     * @param packetClass Packet class.
+     */
+    public <T extends Packet> void registerPacket(Class<T> packetClass) {
+        Packet packet;
+        try {
+            packet = packetClass.newInstance();
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet class has a constructor.", e);
         } catch (IllegalAccessException e) {
@@ -68,11 +128,16 @@ public class PacketManager {
     /**
      * Unregister packet.
      * 
+     * @param <T> A class that implements the Packet interface.
      * @param packet Packet.
      */
-    public void unregisterPacket(Packet packet) {
-        if(this.packets.containsKey(packet.getId())) {
-            this.packets.remove(packet.getId());
+    public <T extends Packet> void unregisterPacket(Class<T> packet) {
+        for(Map.Entry<Integer, Packet> entry : this.packets.entrySet()) {
+            if(entry.getValue().getClass() == packet) {
+                this.packets.remove(entry.getKey());
+                this.serverPacketHandlers.remove(entry.getKey());
+                this.clientPacketHandlers.remove(entry.getKey());
+            }
         }
     }
 
@@ -103,21 +168,9 @@ public class PacketManager {
                 return;
             }
             
-            net.neto_framework.server.event.events.ReceivePacketEvent event =
-                    new net.neto_framework.server.event.events.ReceivePacketEvent(server,
-                            client, packet);
-            
-            // Do not call receive packet event for default packets built-in.
-            if(id == new HandshakePacket().getId()
-                    || id == new EncryptionRequestPacket().getId()
-                    || id == new EncryptionResponsePacket().getId()
-                    || id == new SuccessPacket().getId()
-                    || id == new DisconnectPacket().getId()) {
-                server.getEventHandler().getDefaultServerEventListener().onReceivePacket(event);
-                return;
+            if(this.serverPacketHandlers.get(id) != null) {
+                this.serverPacketHandlers.get(id).onReceivePacket(server, client, packet);
             }
-            
-            server.getEventHandler().callEvent(event);
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {
@@ -152,21 +205,9 @@ public class PacketManager {
                 return;
             }
             
-            net.neto_framework.client.event.events.ReceivePacketEvent event =
-                    new net.neto_framework.client.event.events.ReceivePacketEvent(client,
-                            serverConnection, packet);
-            
-            // Do not call receive packet event for default packets built-in.
-            if(id == new HandshakePacket().getId()
-                    || id == new EncryptionRequestPacket().getId()
-                    || id == new EncryptionResponsePacket().getId()
-                    || id == new SuccessPacket().getId()
-                    || id == new DisconnectPacket().getId()) {
-                client.getEventHandler().getDefaultClientEventListener().onReceivePacket(event);
-                return;
+            if(this.clientPacketHandlers.get(id) != null) {
+                this.clientPacketHandlers.get(id).onReceivePacket(client, packet);
             }
-            
-            client.getEventHandler().callEvent(event);
         } catch (InstantiationException e) {
             throw new RuntimeException("Packet " + id + " class has a constructor.", e);
         } catch (IllegalAccessException e) {

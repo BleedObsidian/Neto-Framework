@@ -41,13 +41,15 @@ import net.neto_framework.client.event.events.DisconnectEvent;
 import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
 import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.exceptions.ClientConnectException;
+import net.neto_framework.client.packets.handlers.DisconnectPacketHandler;
+import net.neto_framework.client.packets.handlers.EncryptionRequestPacketHandler;
+import net.neto_framework.client.packets.handlers.SuccessPacketHandler;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.EncryptionRequestPacket;
 import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
-import net.neto_framework.packets.NetoClientEventListener;
 import net.neto_framework.packets.SuccessPacket;
 
 /**
@@ -139,13 +141,13 @@ public class Client {
     public Client(SocketAddress address) {
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
-        this.packetManager.registerPacket(EncryptionRequestPacket.class);
+        this.packetManager.registerPacket(EncryptionRequestPacket.class,
+                new EncryptionRequestPacketHandler());
         this.packetManager.registerPacket(EncryptionResponsePacket.class);
-        this.packetManager.registerPacket(SuccessPacket.class);
-        this.packetManager.registerPacket(DisconnectPacket.class);
+        this.packetManager.registerPacket(SuccessPacket.class, new SuccessPacketHandler());
+        this.packetManager.registerPacket(DisconnectPacket.class, new DisconnectPacketHandler());
         
         this.eventHandler = new EventHandler();
-        this.eventHandler.registerClientEventListener(new NetoClientEventListener());
         this.address = address;
         this.timer = new Timer();
         

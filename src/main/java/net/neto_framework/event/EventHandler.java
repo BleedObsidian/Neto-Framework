@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import net.neto_framework.client.event.ClientEvent;
 import net.neto_framework.client.event.ClientEventListener;
 import net.neto_framework.client.event.events.DisconnectEvent;
-import net.neto_framework.packets.NetoClientEventListener;
-import net.neto_framework.packets.NetoServerEventListener;
 import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ClientConnectEvent;
@@ -96,12 +94,6 @@ public class EventHandler {
      */
     public void callEvent(ServerEvent event) {
         switch (event.getEventType()) {
-        case RECEIVE_PACKET:
-            this.serverEventListeners.stream().forEach((listener) -> {
-                listener.onReceivePacket(
-                        (net.neto_framework.server.event.events.ReceivePacketEvent) event);
-            });
-            break;
         case CLIENT_CONNECT:
             this.serverEventListeners.stream().forEach((listener) -> {
                 listener.onClientConnect((ClientConnectEvent) event);
@@ -133,49 +125,17 @@ public class EventHandler {
      */
     public void callEvent(ClientEvent event) {
         switch (event.getEventType()) {
-        case RECEIVE_PACKET:
-            this.clientEventListeners.stream().forEach((listener) -> {
-                listener.onReceivePacket(
-                        (net.neto_framework.client.event.events.ReceivePacketEvent) event);
-            });
-            break;
         case DISCONNECT:
             this.clientEventListeners.stream().forEach((listener) -> {
                 listener.onDisconnect((DisconnectEvent) event);
-        });
+            });
             break;
         case PACKET_EXCEPTION:
             this.clientEventListeners.stream().forEach((listener) -> {
                 listener.onPacketException((net.neto_framework.client.event.events.
                         PacketExceptionEvent) event);
-        });
+            });
             break;
         }
-    }
-    
-    /**
-     * @return The built-in client event listener.
-     */
-    public NetoClientEventListener getDefaultClientEventListener() {
-        for(ClientEventListener listener : this.clientEventListeners) {
-            if(listener instanceof NetoClientEventListener) {
-                return (NetoClientEventListener) listener;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * @return The built-in server event listener.
-     */
-    public NetoServerEventListener getDefaultServerEventListener() {
-        for(ServerEventListener listener : this.serverEventListeners) {
-            if(listener instanceof NetoServerEventListener) {
-                return (NetoServerEventListener) listener;
-            }
-        }
-        
-        return null;
     }
 }

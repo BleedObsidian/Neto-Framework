@@ -67,11 +67,6 @@ public class ServerEvent {
     */
    public enum ServerEvents {
        
-        /**
-         * {@link net.neto_framework.server.event.events.ReceivePacketEvent ReceivePacketEvent}.
-         */
-       RECEIVE_PACKET,
-       
        /**
         * {@link net.neto_framework.server.event.events.ClientConnectEvent ClientConnectEvent}.
         */

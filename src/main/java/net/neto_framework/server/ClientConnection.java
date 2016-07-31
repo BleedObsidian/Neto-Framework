@@ -272,6 +272,10 @@ public class ClientConnection implements Runnable {
         try {
             this.tcpConnection.getTCPSocket().close();
         } catch (IOException e) { } //TODO: Log
+        
+        if(!this.isHandshakeCompleted) {
+            this.handshakeTimer.cancel();
+        }
 
         this.server.getConnectionManager().removeClientConnection(this.uuid);
         this.isConnected = false;

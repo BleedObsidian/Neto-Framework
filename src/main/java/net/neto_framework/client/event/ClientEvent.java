@@ -70,11 +70,6 @@ public class ClientEvent {
     public enum ClientEvents {
         
         /**
-         * {@link net.neto_framework.client.event.events.ReceivePacketEvent ReceivePacketEvent}.
-         */
-        RECEIVE_PACKET,
-        
-        /**
          * {@link net.neto_framework.client.event.events.DisconnectEvent DisconnectEvent}.
          */
         DISCONNECT,

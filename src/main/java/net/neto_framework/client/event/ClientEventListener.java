@@ -20,7 +20,6 @@ package net.neto_framework.client.event;
 
 import net.neto_framework.client.event.events.DisconnectEvent;
 import net.neto_framework.client.event.events.PacketExceptionEvent;
-import net.neto_framework.client.event.events.ReceivePacketEvent;
 
 /**
  * An abstract class that allows actions to be taken when specified events are called on the client.
@@ -28,16 +27,6 @@ import net.neto_framework.client.event.events.ReceivePacketEvent;
  * @author BleedObsidian (Jesse Prescott)
  */
 public abstract class ClientEventListener {
-    
-    /**
-     * Fired when a packet is received server side.
-     * 
-     * @param event {@link net.neto_framework.client.event.events.ReceivePacketEvent
-     *              ReceivePacketEvent}.
-     */
-    public void onReceivePacket(ReceivePacketEvent event) {
-        
-    }
 
     /**
      * Fired when the client is disconnected from the server. Reasons include IOExceptions,

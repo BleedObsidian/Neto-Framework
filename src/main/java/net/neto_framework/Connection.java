@@ -77,7 +77,6 @@ public final class Connection {
     /**
      * Port of connection.
      */
-    //TODO: Remove?
     private final int port;
     
     /**

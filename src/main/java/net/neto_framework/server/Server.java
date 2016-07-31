@@ -35,9 +35,11 @@ import net.neto_framework.packets.DisconnectPacket;
 import net.neto_framework.packets.EncryptionRequestPacket;
 import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
-import net.neto_framework.packets.NetoServerEventListener;
 import net.neto_framework.packets.SuccessPacket;
 import net.neto_framework.server.exceptions.ServerException;
+import net.neto_framework.server.packets.handlers.DisconnectPacketHandler;
+import net.neto_framework.server.packets.handlers.EncryptionResponsePacketHandler;
+import net.neto_framework.server.packets.handlers.HandshakePacketHandler;
 
 /**
  * A server handler that receives and accepts connections using a given
@@ -127,18 +129,18 @@ public class Server {
      */
     public Server(SocketAddress address) {
         this.packetManager = new PacketManager();
-        this.packetManager.registerPacket(HandshakePacket.class);
+        this.packetManager.registerPacket(HandshakePacket.class, new HandshakePacketHandler());
         this.packetManager.registerPacket(EncryptionRequestPacket.class);
-        this.packetManager.registerPacket(EncryptionResponsePacket.class);
+        this.packetManager.registerPacket(EncryptionResponsePacket.class,
+                new EncryptionResponsePacketHandler());
         this.packetManager.registerPacket(SuccessPacket.class);
-        this.packetManager.registerPacket(DisconnectPacket.class);
+        this.packetManager.registerPacket(DisconnectPacket.class, new DisconnectPacketHandler());
         
         this.tcpConnectionHandler = new ServerTCPConnectionHandler(this);
         this.udpConnectionHandler = new ServerUDPConnectionHandler(this);
         
         this.connectionManager = new ServerConnectionManager(this);
         this.eventHandler = new EventHandler();
-        this.eventHandler.registerServerEventListener(new NetoServerEventListener());
 
         this.address = address;
         this.backlog = Server.DEFAULT_BACKLOG;
