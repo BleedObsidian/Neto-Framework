@@ -31,11 +31,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import net.neto_framework.Connection;
 import net.neto_framework.Protocol;
-import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.server.event.ServerEventListener;
 import net.neto_framework.server.event.events.ClientDisconnectEvent;
-import net.neto_framework.server.event.events.PacketExceptionEvent;
+import net.neto_framework.server.event.events.ClientFailedToConnectEvent;
 import net.neto_framework.server.event.events.ReceivePacketEvent;
+import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
  * A server event listener used to listen to built-in packets.
@@ -56,18 +56,13 @@ public class NetoServerEventListener extends ServerEventListener {
                 try {
                     event.getClientConnection().sendPacket(response, Protocol.TCP);
                 } catch (IOException e) {
-                    PacketException exception = new PacketException("Failed to send encryption "
-                            + "request.", e);
-                    PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getServer(),
-                            exception);
-                    event.getServer().getEventHandler().callEvent(packetEvent);
+                    ConnectionException exception = new ConnectionException(
+                            "Failed to send encryption request.", e);
+                    ClientFailedToConnectEvent failedEvent = new ClientFailedToConnectEvent(
+                            event.getServer(), exception);
+                    event.getServer().getEventHandler().callEvent(failedEvent);
 
-                    event.getClientConnection().disconnect();
-                    ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
-                            event.getServer(), 
-                            ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                            event.getClientConnection(), exception);
-                    event.getServer().getEventHandler().callEvent(disconnectEvent);
+                    event.getClientConnection().disconnect(false);
                     return;
                 }
 
@@ -76,16 +71,14 @@ public class NetoServerEventListener extends ServerEventListener {
                                 getInetAddress(), packet.getUdpPort());
                 event.getClientConnection().addUdpConnection(udpConnection);
             } else {
-                PacketException exception = new PacketException("Incorrect magic string received.");
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getServer(),
-                        exception);
-                event.getServer().getEventHandler().callEvent(packetEvent);
+                ConnectionException exception = new ConnectionException(
+                        "Incorrect magic string received.");
+                ClientFailedToConnectEvent failedEvent = new ClientFailedToConnectEvent(
+                        event.getServer(), exception);
+                event.getServer().getEventHandler().callEvent(failedEvent);
 
-                event.getClientConnection().disconnect();
-                ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),
-                        ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                        event.getClientConnection(), exception);
-                event.getServer().getEventHandler().callEvent(disconnectEvent);
+                event.getClientConnection().disconnect(false);
+                return;
             }
         } else if(event.getPacket() instanceof EncryptionResponsePacket) {
             EncryptionResponsePacket packet = (EncryptionResponsePacket) event.getPacket();
@@ -129,34 +122,27 @@ public class NetoServerEventListener extends ServerEventListener {
                 try {
                     event.getClientConnection().sendPacket(successPacket, Protocol.TCP);
                 } catch (IOException e) {
-                    PacketException exception = new PacketException("Faild to send success packet.",
-                            e);
-                    PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getServer(),
-                            exception);
-                    event.getServer().getEventHandler().callEvent(packetEvent);
+                    ConnectionException exception = new ConnectionException(
+                            "Failed to send success packet.", e);
+                    ClientFailedToConnectEvent failedEvent = new ClientFailedToConnectEvent(
+                            event.getServer(), exception);
+                    event.getServer().getEventHandler().callEvent(failedEvent);
 
-                    event.getClientConnection().disconnect();
-                    ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
-                            event.getServer(), 
-                            ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                            event.getClientConnection(), exception);
-                    event.getServer().getEventHandler().callEvent(disconnectEvent);
+                    event.getClientConnection().disconnect(false);
+                    return;
                 }
                 
             } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
                     IllegalBlockSizeException | BadPaddingException e) {
-                PacketException exception = new PacketException("Invalid encryption response.", e);
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(event.getServer(),
-                        exception);
-                event.getServer().getEventHandler().callEvent(packetEvent);
+                ConnectionException exception = new ConnectionException(
+                            "Invalid encryption response.", e);
+                ClientFailedToConnectEvent failedEvent = new ClientFailedToConnectEvent(
+                        event.getServer(), exception);
+                event.getServer().getEventHandler().callEvent(failedEvent);
 
-                event.getClientConnection().disconnect();
-                ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),
-                        ClientDisconnectEvent.ClientDisconnectReason.EXCEPTION,
-                        event.getClientConnection(), exception);
-                event.getServer().getEventHandler().callEvent(disconnectEvent);
+                event.getClientConnection().disconnect(false);
+                return;
             }
-            
         } else if(event.getPacket() instanceof DisconnectPacket) {
             event.getClientConnection().disconnect(false);
             ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(event.getServer(),

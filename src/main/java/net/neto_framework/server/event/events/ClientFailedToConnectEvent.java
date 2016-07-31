@@ -23,7 +23,7 @@ import net.neto_framework.server.event.ServerEvent;
 import net.neto_framework.server.exceptions.ConnectionException;
 
 /**
- * Fired when a new client tried to connect but failed (TCP Only). Reasons can include IOExceptions
+ * Fired when a new client tried to connect but failed. Reasons can include IOExceptions
  * or invalid handshakes.
  * <p>
  * This contains the {@link net.neto_framework.server.exceptions.ConnectionException

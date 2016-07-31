@@ -35,6 +35,8 @@ import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
 import net.neto_framework.address.SocketAddress;
+import net.neto_framework.client.event.events.DisconnectEvent;
+import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
 import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.event.EventHandler;
@@ -153,15 +155,16 @@ public class Client {
             try {
                 this.tcpSocket = new Socket(this.address.getInetAddress(), 
                         this.address.getPort());
-                this.isConnected = true;
             } catch (IOException e) {
                 throw new ClientConnectException("Failed to connect to given SocketAddress.", e);
             }
+            
+            this.isConnected = true;
 
             try {
                 this.udpSocket = new DatagramSocket();
             } catch (SocketException e) {
-                this.disconnect();
+                this.disconnect(false);
                 throw new ClientConnectException("Failed to create UDP socket.", e);
             }
 
@@ -170,7 +173,6 @@ public class Client {
                     this.address.getInetAddress(), this.address.getPort());
 
             this.serverConnection = new ServerConnection(this, tcpConnection, udpConnection);
-            this.isConnected = true;
             (new Thread(this.serverConnection)).start();
             
             try {
@@ -178,7 +180,7 @@ public class Client {
                 packet.setUdpPort(this.udpSocket.getLocalPort());
                 this.serverConnection.sendPacket(packet, Protocol.TCP);
             } catch (IOException e) {
-                this.disconnect();
+                this.disconnect(false);
                 throw new ClientConnectException("Failed to send handshake packet.", e);
             }
             
@@ -215,11 +217,21 @@ public class Client {
                             long timestamp = connection.receiveLong();
 
                             if(!Client.this.packetManager.hasPacket(packetId)) {
-                                PacketException exception = new PacketException("Unkown packet"
+                                PacketException exception = new PacketException("Unkown UDP packet"
                                         + " received.");
                                 PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
                                         exception);
                                 Client.this.eventHandler.callEvent(event);
+                                
+                                if(Client.this.isHandshakeComplete) {
+                                    Client.this.disconnect();
+                                    DisconnectEvent disconnectEvent =
+                                            new DisconnectEvent(Client.this,
+                                                    DisconnectReason.EXCEPTION, exception);
+                                    Client.this.getEventHandler().callEvent(disconnectEvent);
+                                } else {
+                                    Client.this.disconnect(false);
+                                }
                             }
 
                             if(Client.this.uuid != null | Client.this.uuid.equals(uuid)) {
@@ -236,20 +248,28 @@ public class Client {
                                 }
                             } else {
                                 PacketException exception = new PacketException("UUID does not "
-                                        + "match on received packet.");
+                                        + "match on received UDP packet.");
                                 PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
                                         exception);
                                 Client.this.eventHandler.callEvent(event);
+                                
+                                if(Client.this.isHandshakeComplete) {
+                                    Client.this.disconnect();
+                                    DisconnectEvent disconnectEvent =
+                                            new DisconnectEvent(Client.this,
+                                                    DisconnectReason.EXCEPTION, exception);
+                                    Client.this.getEventHandler().callEvent(disconnectEvent);
+                                } else {
+                                    Client.this.disconnect(false);
+                                }
                             }
                         } catch (IOException e) {
                             if(!Client.this.udpSocket.isClosed()) {
-                                PacketException exception = new PacketException("Failed to read "
-                                        + "packet.", e);
+                                PacketException exception = new PacketException("Failed to read UDP"
+                                        + " packet.", e);
                                 PacketExceptionEvent event = new PacketExceptionEvent(Client.this,
                                         exception);
                                 Client.this.eventHandler.callEvent(event);
-                            } else {
-                                break;
                             }
                         }
                     }

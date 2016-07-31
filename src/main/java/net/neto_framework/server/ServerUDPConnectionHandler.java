@@ -26,6 +26,8 @@ import java.util.UUID;
 import net.neto_framework.Connection;
 import net.neto_framework.Protocol;
 import net.neto_framework.exceptions.PacketException;
+import net.neto_framework.server.event.events.ClientDisconnectEvent;
+import net.neto_framework.server.event.events.ClientDisconnectEvent.ClientDisconnectReason;
 import net.neto_framework.server.event.events.PacketExceptionEvent;
 
 /**
@@ -101,15 +103,20 @@ public class ServerUDPConnectionHandler extends Thread {
                 int packetId = connection.receiveInteger();
                 
                 if(!this.server.getPacketManager().hasPacket(packetId)) {
-                    PacketException exception = new PacketException("Unkown packet received.");
+                    PacketException exception = new PacketException("Unkown UDP packet received.");
                     PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
                     this.server.getEventHandler().callEvent(event);
+                    
+                    client.disconnect();
+                    ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
+                            this.server, ClientDisconnectReason.EXCEPTION, client, exception);
+                    this.server.getEventHandler().callEvent(disconnectEvent);
                 }
                 
                 UUID uuid = UUID.fromString(connection.receiveString());
                 long timestamp = connection.receiveLong();
                 
-                if(this.server.getConnectionManager().hasClientConnection(uuid)) {
+                if(client.getUUID().equals(uuid)) {
                     client.getUDPConnection().setUdpDataInputStream(inputStream);
                     
                     if((System.currentTimeMillis() - timestamp) > Connection.REPLAY_WINDOW) {
@@ -120,18 +127,23 @@ public class ServerUDPConnectionHandler extends Thread {
                                 Protocol.UDP, false);
                     }
                 } else {
-                    PacketException exception = new PacketException("Packet received from unkown"
-                            + " client.");
+                    PacketException exception = new PacketException("Client sent invalid UUID along"
+                            + " with TCP packet.");
                     PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
                     this.server.getEventHandler().callEvent(event);
+                    
+                    client.disconnect();
+                    ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(
+                            this.server, ClientDisconnectReason.EXCEPTION, client, exception);
+                    this.server.getEventHandler().callEvent(disconnectEvent);
+                    continue;
                 }
             } catch (IOException e) {
                 if(!this.server.getUdpSocket().isClosed()) {
-                    PacketException exception = new PacketException("Failed to read packet.", e);
+                    PacketException exception = new PacketException("Failed to read UDP packet.",
+                            e);
                     PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
                     this.server.getEventHandler().callEvent(event);
-                } else {
-                    break;
                 }
             }
         }
