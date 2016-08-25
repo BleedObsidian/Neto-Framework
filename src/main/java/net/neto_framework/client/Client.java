@@ -24,15 +24,25 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.security.PublicKey;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Random;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import net.neto_framework.Connection;
 import net.neto_framework.PacketManager;
 import net.neto_framework.Protocol;
@@ -42,15 +52,14 @@ import net.neto_framework.client.event.events.DisconnectEvent.DisconnectReason;
 import net.neto_framework.client.event.events.PacketExceptionEvent;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.client.packets.handlers.DisconnectPacketHandler;
-import net.neto_framework.client.packets.handlers.EncryptionRequestPacketHandler;
 import net.neto_framework.client.packets.handlers.SuccessPacketHandler;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.exceptions.PacketException;
 import net.neto_framework.packets.DisconnectPacket;
-import net.neto_framework.packets.EncryptionRequestPacket;
-import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.SuccessPacket;
+import net.neto_framework.server.Server;
+import net.neto_framework.utils.NetoFramework;
 
 /**
  * A client handler that can connect to a TCP or UDP server.
@@ -59,6 +68,11 @@ import net.neto_framework.packets.SuccessPacket;
  */
 public class Client {
 
+    /**
+     * The version of Neto-Framework the client is using loaded at runtime.
+     */
+    private final String version;
+    
     /**
      * The {@link net.neto_framework.PacketManager PacketManager}.
      */
@@ -75,19 +89,19 @@ public class Client {
     private final SocketAddress address;
     
     /**
-     * A random short sent to the server and must be received exactly in the success packet.
-     */
-    private final short random;
-    
-    /**
      * Timer used to stop handshake process from hanging.
      */
     private final Timer timer;
+    
+    /**
+     * The KeyStore containing the servers certificate and private key (May be null).
+     */
+    private final KeyStore keyStore;
 
     /**
      * TCP Socket.
      */
-    private Socket tcpSocket;
+    private SSLSocket tcpSocket;
     
     /**
      * UDP Socket.
@@ -115,12 +129,7 @@ public class Client {
     private volatile ClientConnectException handshakeException;
     
     /**
-     * The public key from the server used by the client to encrypt the shared secret.
-     */
-    private PublicKey publicKey;
-    
-    /**
-     * The secret key used to encrypt/decrypt packets after encryption response.
+     * The secret key used to encrypt/decrypt UDP packets.
      */
     private SecretKey secretKey;
     
@@ -135,15 +144,25 @@ public class Client {
     private UUID uuid;
 
     /**
+     * New client using server authentication.
+     * 
      * @param address The {@link net.neto_framework.address.SocketAddress SocketAddress} to connect
      *                to.
+     * @param keyStore The KeyStore containing the servers certificate and NOT a private key.
      */
-    public Client(SocketAddress address) {
+    public Client(SocketAddress address, KeyStore keyStore) {
+        
+        try {
+            Properties properties = new Properties();
+            properties.load(ClassLoader.getSystemResourceAsStream(
+                    NetoFramework.PROPERTIES_LOCATION));
+            this.version = properties.getProperty("version");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to detect version of neto-framework.", e);
+        }
+        
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class);
-        this.packetManager.registerPacket(EncryptionRequestPacket.class,
-                new EncryptionRequestPacketHandler());
-        this.packetManager.registerPacket(EncryptionResponsePacket.class);
         this.packetManager.registerPacket(SuccessPacket.class, new SuccessPacketHandler());
         this.packetManager.registerPacket(DisconnectPacket.class, new DisconnectPacketHandler());
         
@@ -151,8 +170,17 @@ public class Client {
         this.address = address;
         this.timer = new Timer();
         
-        Random random = new Random();
-        this.random = (short) random.nextInt(Short.MAX_VALUE + 1);
+        this.keyStore = keyStore;
+    }
+    
+    /**
+     * New client not using server authentication (Vulnerable to man in the middle attacks).
+     * 
+     * @param address The {@link net.neto_framework.address.SocketAddress SocketAddress} to connect
+     *                to.
+     */
+    public Client(SocketAddress address) {
+        this(address, null);
     }
 
     /**
@@ -162,11 +190,55 @@ public class Client {
      */
     public void connect() throws ClientConnectException {
         if (!this.isConnected) {
+            TrustManagerFactory trustManagerFactory = null;
+            
+            if(this.keyStore != null) {
+                try {
+                    trustManagerFactory = TrustManagerFactory.getInstance(
+                            TrustManagerFactory.getDefaultAlgorithm());
+                    trustManagerFactory.init(this.keyStore);
+                } catch (NoSuchAlgorithmException | KeyStoreException e) {
+                    throw new ClientConnectException("Failed to connect to server with given"
+                            + " KeyStore and password.", e);
+                }
+            }
+            
+            SSLContext context = null;
             try {
-                this.tcpSocket = new Socket(this.address.getInetAddress(), 
+                context = SSLContext.getInstance("TLSv1.2");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Unkown SSL Context algorithm.", e);
+            }
+            
+            try {
+                if(this.keyStore != null) {
+                    context.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+                } else {
+                    context.init(null, null, new SecureRandom());
+                }
+            } catch (KeyManagementException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            try {
+                SSLSocketFactory factory = context.getSocketFactory();
+                this.tcpSocket = (SSLSocket) factory.createSocket(this.address.getInetAddress(),
                         this.address.getPort());
+                
+                if(this.keyStore == null) {
+                    this.tcpSocket.setEnabledCipherSuites(new String[] {
+                        "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA"});
+                }
             } catch (IOException e) {
-                throw new ClientConnectException("Failed to connect to given SocketAddress.", e);
+                throw new ClientConnectException("Failed to start server on given address.", e);
+            }
+            
+            this.tcpSocket.setUseClientMode(true);
+            
+            try {
+                this.tcpSocket.startHandshake();
+            } catch (IOException e) {
+                throw new ClientConnectException("Failed to connect to given SocketAddress. ", e);
             }
             
             this.isConnected = true;
@@ -187,7 +259,8 @@ public class Client {
             
             try {
                 HandshakePacket packet = new HandshakePacket();
-                packet.setUdpPort(this.udpSocket.getLocalPort());
+                packet.setClientVersion(this.version);
+                packet.setListeningUdpPort(this.udpSocket.getLocalPort());
                 this.serverConnection.sendPacket(packet, Protocol.TCP);
             } catch (IOException e) {
                 this.disconnect(false);
@@ -197,7 +270,7 @@ public class Client {
             this.timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    ClientConnectException exception = new ClientConnectException("Server took to"
+                    ClientConnectException exception = new ClientConnectException("Server took too"
                             + " long to complete handshake process.");
                     Client.this.setHandshakeException(exception);
                     Client.this.disconnect(false);
@@ -369,13 +442,6 @@ public class Client {
     }
     
     /**
-     * @return A random short sent to the server and must be received exactly in the success packet.
-     */
-    public short getRandom() {
-        return this.random;
-    }
-    
-    /**
      * @return Timer used to stop handshake process from hanging.
      */
     public Timer getTimer() {
@@ -431,21 +497,6 @@ public class Client {
      */
     public void setHandshakeException(ClientConnectException exception) {
         this.handshakeException = exception;
-    }
-    
-    /**
-     * @return The public key from the server used by the client to encrypt the shared secret.
-     */
-    public PublicKey getPublicKey() {
-        return this.publicKey;
-    }
-    
-    /**
-     * @param publicKey The public key from the server used by the client to encrypt the shared
-     *                  secret.
-     */
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
     }
     
     /**

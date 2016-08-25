@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package net.neto_framework.packets;
 
 import java.io.IOException;
@@ -22,7 +23,10 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The handshake packet is the first packet send from client to server.
+ * The handshake packet is the first packet sent from client to server. It contains a magic string
+ * that is used to check that both parties are using the Neto-Framework. It also contains version
+ * information allowing the server to ensure that both parties are using versions of Neto-Framework
+ * that work together.
  *
  * @author Jesse Prescott (BleedObsidian)
  */
@@ -31,49 +35,65 @@ public class HandshakePacket implements Packet {
     /**
      * The magic string that is sent to ensure the same framework is being used.
      */
-    public static final String MAGIC_STRING = "sjd7dHS92jS92L02";
+    private String magicStringValue;
     
     /**
-     * The actual value that was received.
+     * The version of Neto-Framework the client is running.
      */
-    private String value;
+    private String clientVersion;
     
     /**
      * The UDP port the client is listening on.
      */
-    private int udpPort;
+    private int listeningUdpPort;
 
     @Override
     public void send(Connection connection) throws IOException {
-        connection.sendString(HandshakePacket.MAGIC_STRING);
-        connection.sendInteger(this.udpPort);
+        connection.sendString(Connection.MAGIC_STRING);
+        connection.sendString(this.clientVersion);
+        connection.sendInteger(this.listeningUdpPort);
     }
     
     @Override
     public void receive(Connection connection) throws IOException {
-        this.value = connection.receiveString();
-        this.udpPort = connection.receiveInteger();
+        this.magicStringValue = connection.receiveString();
+        this.clientVersion = connection.receiveString();
+        this.listeningUdpPort = connection.receiveInteger();
     }
     
     /**
-     * @return The actual magic string value that was received.
+     * @return The magic string that is sent to ensure the same framework is being used.
      */
-    public String getValue() {
-        return this.value;
+    public String getMagicStringValue() {
+        return this.magicStringValue;
     }
     
     /**
-     * @return The UDP port the client is listening on..
+     * @return The version of Neto-Framework the client is running.
      */
-    public int getUdpPort() {
-        return this.udpPort;
+    public String getClientVersion() {
+        return this.clientVersion;
+    }
+    
+    /**
+     * @param version The version of Neto-Framework the client is running.
+     */
+    public void setClientVersion(String version) {
+        this.clientVersion = version;
+    }
+    
+    /**
+     * @return The UDP port the client is listening on.
+     */
+    public int getListeningUdpPort() {
+        return this.listeningUdpPort;
     }
     
     /**
      * @param port The UDP port the client is listening on.
      */
-    public void setUdpPort(int port) {
-        this.udpPort = port;
+    public void setListeningUdpPort(int port) {
+        this.listeningUdpPort = port;
     }
 
     @Override

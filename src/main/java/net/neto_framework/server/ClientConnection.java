@@ -55,19 +55,24 @@ public class ClientConnection implements Runnable {
     private final Server server;
     
     /**
-     * TCP connection.
-     */
-    private final Connection tcpConnection;
-    
-    /**
      * A HashMap that can be used to store anything about clients.
      */
     private final HashMap<String, Object> storage;
     
     /**
+     * TCP connection.
+     */
+    private final Connection tcpConnection;
+    
+    /**
      * UDP connection.
      */
     private Connection udpConnection;
+    
+    /**
+     * If the client is currently connected.
+     */
+    private boolean isConnected;
     
     /**
      * The UDP port number the client is sending packets from.
@@ -85,14 +90,9 @@ public class ClientConnection implements Runnable {
     private IvParameterSpec ivParameterSpec;
     
     /**
-     * The hashed success packet used to authenticate initial UDP packet from client.
+     * The random that was sent to the client during handshake hashed in SHA-512.
      */
-    private byte[] hashedSuccessPacket;
-    
-    /**
-     * If the client is currently connected.
-     */
-    private boolean isConnected;
+    private byte[] hashedRandom;
     
     /**
      * A timer used to kick a client if they do not complete the handshake process in enough time.
@@ -119,22 +119,28 @@ public class ClientConnection implements Runnable {
 
     @Override
     public void run() {
-        Thread.currentThread().setName("Neto-Framework Server Client: " + this.uuid.toString());
         
+        // Name this thread.
+        Thread.currentThread().setName("Neto-Framework Server Client");
+        
+        // Continuously read TCP packets from client until the server is stopped or they are no
+        // longer connected.
         while (this.server.isRunning() && this.isConnected) {
-            int packetId;
-            long timestamp = 0;
-            String uuidString = "";
             
+            // Define metadata variables.
+            int packetId = 0;
+            long timestamp = 0;
+            
+            // Attempt to receive metadata.
             try {
                 packetId = this.tcpConnection.receiveInteger();
-                
-                if(this.isHandshakeCompleted) {
-                    uuidString = this.tcpConnection.receiveString();
-                    timestamp = this.tcpConnection.receiveLong();
-                }
+                timestamp = this.tcpConnection.receiveLong();
             } catch (IOException e) {
+                
+                // Check if the TCP socket has not been closed.
                 if(!this.tcpConnection.getTCPSocket().isClosed()) {
+                    
+                    // Call a packet exception event.
                     PacketException exception = new PacketException("Failed to read packet. Client"
                             + " most likely closed the connection without sending a disconnect"
                             + " packet.", e);
@@ -143,81 +149,70 @@ public class ClientConnection implements Runnable {
                     this.server.getEventHandler().callEvent(packetEvent);
                     this.disconnect(false);
                     
+                    // If the client has completed the handshake, call a client disconnect event.
                     if(this.isHandshakeCompleted) {
                         ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
                                 ClientDisconnectReason.EXCEPTION, this, exception);
                         this.server.getEventHandler().callEvent(event);
                     }
-                    
-                    break;
-                } else {
-                    break;
                 }
+                
+                // End the thread.
+                break;
             }
             
-            if(packetId != -1 && packetId != -3 && !this.isHandshakeCompleted) {
+            // Check to see if the packet arrived within the replay window.
+            if((System.currentTimeMillis() - timestamp) > Connection.REPLAY_WINDOW) {
+                try {
+                    int available = this.tcpConnection.getTCPSocket().getInputStream().available();
+                    this.tcpConnection.getTCPSocket().getInputStream().skip(available);
+                } catch (IOException e) { }
+                
+                continue;
+            }
+            
+            // If the client has not completed the handshake process, they should not be able to
+            // send any other packets except those of the handshake process.
+            if(!this.isHandshakeCompleted && packetId != -1 && packetId != -4) {
                 ConnectionException exception = new ConnectionException("A client sent an unkown"
                         + " packet or other before completing the handshake process.");
                 ClientFailedToConnectEvent event = new ClientFailedToConnectEvent(this.server,
                 exception);
                 this.server.getEventHandler().callEvent(event);
 
-                this.disconnect(false);
+                this.disconnect();
                 break;
             }
             
-            if(this.isHandshakeCompleted && !this.uuid.toString().equals(uuidString)) {
-                PacketException exception = new PacketException("Received a TCP packet from client"
-                        + " with the wrong UUID.");
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
-                        this.uuid);
-                this.server.getEventHandler().callEvent(packetEvent);
+            // Check to see if the server knows the given packet.
+            if(!this.server.getPacketManager().hasPacket(packetId)) {
+                PacketException exception = new PacketException("Unkown TCP packet received.");
+                PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
+                this.server.getEventHandler().callEvent(event);
                 
                 this.disconnect();
-                ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(this.server, 
                         ClientDisconnectReason.EXCEPTION, this, exception);
-                this.server.getEventHandler().callEvent(event);
+                this.server.getEventHandler().callEvent(disconnectEvent);
                 break;
             }
-                
-            if (this.server.getPacketManager().hasPacket(packetId)) {
-                try {
-                    if(this.isHandshakeCompleted &&
-                            (System.currentTimeMillis() - timestamp) > Connection.REPLAY_WINDOW) {
-                        this.server.getPacketManager().receive(this.server, packetId, this,
-                            Protocol.TCP, true);
-                    } else {
-                        this.server.getPacketManager().receive(this.server, packetId, this,
-                                Protocol.TCP, false);
-                    }
-                } catch (IOException e) {
-                    PacketException exception = new PacketException("Failed to read packet.", e);
-                    this.server.getEventHandler().callEvent(new PacketExceptionEvent(this.server, 
-                                    exception));
+            
+            // Attempt to receive packet data.
+            try {
+                this.server.getPacketManager().receive(this.server, packetId, this, Protocol.TCP);
+            } catch (IOException e) {
+                PacketException exception = new PacketException("Failed to read TCP packet"
+                        + " data.", e);
+                PacketExceptionEvent event = new PacketExceptionEvent(this.server, exception);
+                this.server.getEventHandler().callEvent(event);
+                this.disconnect();
                     
-                    this.disconnect();
-                    ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
-                            ClientDisconnectReason.EXCEPTION, this, exception);
-                    this.server.getEventHandler().callEvent(event);
-                    break;
-                }
-            } else {
-                PacketException exception = new PacketException("Unkown packet received." +
-                        packetId);
-                PacketExceptionEvent packetEvent = new PacketExceptionEvent(this.server, exception,
-                        this.uuid);
-                this.server.getEventHandler().callEvent(packetEvent);
-
+                // If the client has completed the handshake, call a client disconnect event.
                 if(this.isHandshakeCompleted) {
-                    this.disconnect();
-                    ClientDisconnectEvent event = new ClientDisconnectEvent(this.server, 
+                    ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(this.server, 
                             ClientDisconnectReason.EXCEPTION, this, exception);
-                    this.server.getEventHandler().callEvent(event);
-                } else {
-                    this.disconnect(false);
+                    this.server.getEventHandler().callEvent(disconnectEvent);
                 }
-                
-                break;
             }
         }
     }
@@ -230,30 +225,54 @@ public class ClientConnection implements Runnable {
      * @throws IOException If fails to send packet.
      */
     public synchronized void sendPacket(Packet packet, Protocol protocol) throws IOException {
-        if(this.server.getPacketManager().hasPacket(packet.getId())) {
-            if(protocol == Protocol.TCP) {
-                this.tcpConnection.sendInteger(packet.getId());
-                
-                if(this.isHandshakeCompleted) {
-                    this.tcpConnection.sendString(this.uuid.toString());
-                    this.tcpConnection.sendLong(System.currentTimeMillis());
-                }
-                
-                packet.send(this.tcpConnection);
-            } else {
-                this.udpConnection.sendInteger(packet.getId());
-                this.udpConnection.sendString(this.uuid.toString());
-                this.udpConnection.sendLong(System.currentTimeMillis());
-                packet.send(this.udpConnection);
-                byte[] data = this.udpConnection.getUdpData();
-                data = Base64.getEncoder().withoutPadding().encode(data);
-
-                DatagramPacket dataPacket = new DatagramPacket(data, data.length,
-                        this.udpConnection.getAddress(), this.udpConnection.getPort());
-                this.server.getUdpSocket().send(dataPacket);
-            }
-        } else {
-            throw new RuntimeException("Attempt to send unregistered packet.");
+        
+        // Throw an exception if an attempt to send an unregistered packet is made.
+        if(!this.server.getPacketManager().hasPacket(packet.getId())) {
+            throw new RuntimeException("You can not attempt to send an unregistered packet, please"
+                    + " register it with the PacketManager first.");
+        }
+        
+        // If sending the packet over TCP.
+        if(protocol == Protocol.TCP) {
+            // Send the Packet ID.
+            this.tcpConnection.sendInteger(packet.getId());
+            
+            // Send the current timestamp.
+            this.tcpConnection.sendLong(System.currentTimeMillis());
+            
+            // Send the packet data.
+            packet.send(this.tcpConnection);
+        }
+        
+        // If sending the packet over UDP.
+        if(protocol == Protocol.UDP) {
+            // Send the Packet ID.
+            this.udpConnection.sendInteger(packet.getId());
+            
+            // Send the Client's UUID.
+            this.udpConnection.sendString(this.uuid.toString());
+            
+            // Send the current timestamp.
+            this.udpConnection.sendLong(System.currentTimeMillis());
+            
+            // Send the packet data.
+            packet.send(this.udpConnection);
+            
+            // Get the entire packet's data from stream.
+            byte[] data = this.udpConnection.getUdpData();
+            
+            // Encode the entire packet in Base64.
+            data = Base64.getEncoder().withoutPadding().encode(data);
+            
+            // Craft the raw UDP packet.
+            DatagramPacket dataPacket = new DatagramPacket(
+                    data,
+                    data.length,
+                    this.udpConnection.getAddress(),
+                    this.udpConnection.getPort());
+            
+            // Attempt to send the packet.
+            this.server.getUdpSocket().send(dataPacket);
         }
     }
     
@@ -263,22 +282,36 @@ public class ClientConnection implements Runnable {
      * @param sendDisconnectPacket If true, sends a disconnect packet to the client before closing.
      */
     public synchronized void disconnect(boolean sendDisconnectPacket) {
+        
+        // Send a disconnect packet to the client if desired.
         if(sendDisconnectPacket) {
             try {
                 this.sendPacket(new DisconnectPacket(), Protocol.TCP);
             } catch (IOException e) {} //TODO: Log
         }
         
+        // Attempt to close the TCP socket cleanly.
         try {
             this.tcpConnection.getTCPSocket().close();
         } catch (IOException e) { } //TODO: Log
         
+        // If the client was in the handshake process cancel the handshake timer.
         if(!this.isHandshakeCompleted) {
             this.handshakeTimer.cancel();
         }
 
+        // Tell the connection manager to remve the client.
         this.server.getConnectionManager().removeClientConnection(this.uuid);
+        
+        // Place the ClientConnection into an unconnected state.
         this.isConnected = false;
+    }
+    
+    /**
+     * Disconnect client from the server.
+     */
+    public void disconnect() {
+        this.disconnect(true);
     }
     
     /**
@@ -348,18 +381,18 @@ public class ClientConnection implements Runnable {
     }
     
     /**
-     * @return The hashed success packet used to authenticate initial UDP packet from client.
+     * @return The random that was sent to the client during handshake hashed in SHA-512.
      */
-    public byte[] getHashedSuccessPacket() {
-        return this.hashedSuccessPacket;
+    public byte[] getHashedRandom() {
+        return this.hashedRandom;
     }
     
     /**
-     * @param hashedSuccessPacket The hashed success packet used to authenticate initial
-     *                            UDP packet from client.
+     * @param hashedRandom The random that was sent to the client during handshake hashed in
+     *                     SHA-512.
      */
-    public void setHashedSuccessPacket(byte[] hashedSuccessPacket) {
-        this.hashedSuccessPacket = hashedSuccessPacket;
+    public void setHashedRandom(byte[] hashedRandom) {
+        this.hashedRandom = hashedRandom;
     }
     
     /**
@@ -388,13 +421,6 @@ public class ClientConnection implements Runnable {
      */
     public void setHandshakeCompleted(boolean value) {
         this.isHandshakeCompleted = value;
-    }
-    
-    /**
-     * Disconnect client from the server.
-     */
-    public void disconnect() {
-        this.disconnect(true);
     }
 
     /**

@@ -24,10 +24,8 @@ import net.neto_framework.Packet;
 
 /**
  * The success packet is sent from server to client and is the final packet involved in the
- * handshake process. This packet contains the UUID of the client given by the server and the random
- * short from the client. This packet is fully encrypted at this point via the connection handler,
- * if the UUID of a client is obtained by a malicious user, it could be used to send UDP packets
- * on behalf of a client.
+ * handshake process. This packet contains sensitive information such as the client's UUID. This
+ * UUID will be used by the client to authenticate every incoming and outgoing UDP packet.
  *
  * @author BleedObsidian (Jesse Prescott)
  */
@@ -37,22 +35,15 @@ public class SuccessPacket implements Packet {
      * The UUID of the client.
      */
     private String uuid;
-    
-    /**
-     * The random short that was received from the client in the encryption response.
-     */
-    private short random;
 
     @Override
     public void send(Connection connection) throws IOException {
         connection.sendString(this.uuid);
-        connection.sendShort(this.random);
     }
 
     @Override
     public void receive(Connection connection) throws IOException {
         this.uuid = connection.receiveString();
-        this.random = connection.receiveShort();
     }
     
     /**
@@ -69,24 +60,10 @@ public class SuccessPacket implements Packet {
     public void setUUID(String uuid) {
         this.uuid = uuid;
     }
-    
-    /**
-     * @return The random short that was received from the client in the encryption response.
-     */
-    public short getRandom() {
-        return this.random;
-    }
-    
-    /**
-     * @param random The random short that was received from the client in the encryption response.
-     */
-    public void setRandom(short random) {
-        this.random = random;
-    }
 
     @Override
     public int getId() {
-        return -4;
+        return -3;
     }
 
 }

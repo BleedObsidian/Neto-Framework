@@ -22,24 +22,29 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.SocketException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import net.neto_framework.PacketManager;
 import net.neto_framework.address.SocketAddress;
 import net.neto_framework.event.EventHandler;
 import net.neto_framework.packets.DisconnectPacket;
-import net.neto_framework.packets.EncryptionRequestPacket;
-import net.neto_framework.packets.EncryptionResponsePacket;
 import net.neto_framework.packets.HandshakePacket;
 import net.neto_framework.packets.SuccessPacket;
 import net.neto_framework.server.exceptions.ServerException;
 import net.neto_framework.server.packets.handlers.DisconnectPacketHandler;
-import net.neto_framework.server.packets.handlers.EncryptionResponsePacketHandler;
 import net.neto_framework.server.packets.handlers.HandshakePacketHandler;
+import net.neto_framework.utils.NetoFramework;
 
 /**
  * A server handler that receives and accepts connections using a given
@@ -55,9 +60,14 @@ public class Server {
     public static final int DEFAULT_BACKLOG = 50;
     
     /**
-     * Default key size for RSA key pair.
+     * Default key size for DESede used for encrypting UDP.
      */
     public static final int DEFAULT_KEYSIZE = 2048;
+    
+    /**
+     * The version of Neto-Framework the server is using loaded at runtime.
+     */
+    private final String version;
 
     /**
      * The {@link net.neto_framework.PacketManager PacketManager}.
@@ -94,14 +104,14 @@ public class Server {
     private final SocketAddress address;
     
     /**
-     * The public key used for encrypting shared secret.
+     * The KeyStore containing the servers certificate and private key (May be null).
      */
-    private PublicKey publicKey;
+    private final KeyStore keyStore;
     
     /**
-     * The private key pair used for decrypting shared secret.
+     * The password for the provided key store (May be null).
      */
-    private PrivateKey privateKey;
+    private final String keyStorePassword;
     
     /**
      * The TCP backlog value.
@@ -111,7 +121,7 @@ public class Server {
     /**
      * The TCP Socket. (If using TCP)
      */
-    private ServerSocket tcpSocket;
+    private SSLServerSocket tcpSocket;
     
     /**
      * The UDP Socket. (If using UDP)
@@ -124,15 +134,26 @@ public class Server {
     private volatile boolean isRunning;
 
     /**
+     * New Server using given KeyStore.
+     * 
      * @param address {@link net.neto_framework.address.SocketAddress
      *                SocketAddress} for server to bind to.
+     * @param keyStore The KeyStore containing the servers certificate and private key.
+     * @param keyStorePassword The password for the given KeyStore.
      */
-    public Server(SocketAddress address) {
+    public Server(SocketAddress address, KeyStore keyStore, String keyStorePassword) {
+        
+        try {
+            Properties properties = new Properties();
+            properties.load(ClassLoader.getSystemResourceAsStream(
+                    NetoFramework.PROPERTIES_LOCATION));
+            this.version = properties.getProperty("version");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to detect version of neto-framework.", e);
+        }
+        
         this.packetManager = new PacketManager();
         this.packetManager.registerPacket(HandshakePacket.class, new HandshakePacketHandler());
-        this.packetManager.registerPacket(EncryptionRequestPacket.class);
-        this.packetManager.registerPacket(EncryptionResponsePacket.class,
-                new EncryptionResponsePacketHandler());
         this.packetManager.registerPacket(SuccessPacket.class);
         this.packetManager.registerPacket(DisconnectPacket.class, new DisconnectPacketHandler());
         
@@ -144,6 +165,18 @@ public class Server {
 
         this.address = address;
         this.backlog = Server.DEFAULT_BACKLOG;
+        this.keyStore = keyStore;
+        this.keyStorePassword = keyStorePassword;
+    }
+    
+    /**
+     * New Server without a certificate (Vulnerable to man in the middle attacks).
+     * 
+     * @param address {@link net.neto_framework.address.SocketAddress
+     *                SocketAddress} for server to bind to.
+     */
+    public Server(SocketAddress address) {
+        this(address, null, null);
     }
 
     /**
@@ -153,31 +186,61 @@ public class Server {
      *         start.
      */
     public void start() throws ServerException {
+        //TODO: Document.
+        
         if (!this.isRunning) {
+            KeyManagerFactory keyManagerFactory = null;
+            
+            if(this.keyStore != null) {
+                try {
+                    keyManagerFactory = KeyManagerFactory.getInstance(
+                            KeyManagerFactory.getDefaultAlgorithm());
+                    keyManagerFactory.init(this.keyStore,
+                            this.keyStorePassword.toCharArray());
+                } catch (NoSuchAlgorithmException | KeyStoreException |
+                        UnrecoverableKeyException e) {
+                    throw new ServerException("Failed to start server with given KeyStore and"
+                            + " password.", e);
+                }
+            }
+            
+            SSLContext context = null;
             try {
-                this.tcpSocket = new ServerSocket(this.address.getPort(),
-                        this.backlog, this.address.getInetAddress());
+                context = SSLContext.getInstance("TLSv1.2");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Unkown SSL Context algorithm.", e);
+            }
+            
+            try {
+                if(this.keyStore != null) {
+                    context.init(keyManagerFactory.getKeyManagers(), null, new SecureRandom());
+                } else {
+                    context.init(null, null, new SecureRandom());
+                }
+            } catch (KeyManagementException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            try {
+                SSLServerSocketFactory factory = context.getServerSocketFactory();
+                this.tcpSocket = (SSLServerSocket) factory.createServerSocket(
+                        this.address.getPort(), this.backlog, this.address.getInetAddress());
+                
+                if(this.keyStore == null) {
+                    this.tcpSocket.setEnabledCipherSuites(new String[] {
+                        "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA"});
+                }
             } catch (IOException e) {
                 throw new ServerException("Failed to start server on given address.", e);
             }
+            
+            this.tcpSocket.setNeedClientAuth(false);
 
             try {
                 this.udpSocket = new DatagramSocket(this.address.getPort(),
                         this.address.getInetAddress());
             } catch (SocketException e) {
                 throw new ServerException("Failed to start server on given address.", e);
-            }
-            
-            try {
-                KeyPairGenerator keyPairGenerator= KeyPairGenerator.getInstance("RSA");
-                keyPairGenerator.initialize(Server.DEFAULT_KEYSIZE,
-                        SecureRandom.getInstanceStrong());
-                KeyPair keyPair = keyPairGenerator.generateKeyPair();
-                this.publicKey = keyPair.getPublic();
-                this.privateKey = keyPair.getPrivate();
-            } catch (NoSuchAlgorithmException e) {
-                throw new ServerException("Failed to start server due to unknown encryption"
-                        + " algorithm.", e);
             }
             
             (new Thread(this.tcpConnectionHandler)).start();
@@ -209,6 +272,13 @@ public class Server {
             this.udpSocket.close();
         }
     }
+    
+    /**
+     * @return he version of Neto-Framework the server is using loaded at runtime.
+     */
+    public String getVersion() {
+        return this.version;
+    }
 
     /**
      * @return {@link net.neto_framework.PacketManager PacketManager}.
@@ -230,20 +300,6 @@ public class Server {
      */
     public SocketAddress getAddress() {
         return this.address;
-    }
-    
-    /**
-     * @return Elliptic Curve public key.
-     */
-    public PublicKey getPublicKey() {
-        return this.publicKey;
-    }
-    
-    /**
-     * @return Elliptic Curve private key.
-     */
-    public PrivateKey getPrivateKey() {
-        return this.privateKey;
     }
 
     /**

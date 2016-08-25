@@ -34,10 +34,18 @@ public class DisconnectPacketHandler implements ServerPacketHandler<DisconnectPa
 
     @Override
     public void onReceivePacket(Server server, ClientConnection client, DisconnectPacket packet) {
+        
+        // Disconnect the client without sending a disconnect packet (As they asked for it).
         client.disconnect(false);
-        ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(server, 
-                ClientDisconnectReason.DISCONNECT_PACKET, client);
-        server.getEventHandler().callEvent(disconnectEvent);
+        
+        // If the client has completed the handshake process.
+        if(client.isHandshakeCompleted()) {
+            
+            // Call a disconnect event.
+            ClientDisconnectEvent disconnectEvent = new ClientDisconnectEvent(server, 
+                    ClientDisconnectReason.DISCONNECT_PACKET, client);
+            server.getEventHandler().callEvent(disconnectEvent);
+        }
     }
 
 }

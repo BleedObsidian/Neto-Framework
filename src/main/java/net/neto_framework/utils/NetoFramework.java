@@ -16,30 +16,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.neto_framework.packets;
-
-import java.io.IOException;
-import net.neto_framework.Connection;
-import net.neto_framework.Packet;
+package net.neto_framework.utils;
 
 /**
- * A disconnect packet can be sent to/from either server or client. This packet is sent before the
- * client/server closes connection, allowing the client/server to end the connection cleanly.
+ * A static utility class containing various constants used throughout the library.
  *
  * @author Jesse Prescott (BleedObsidian)
  */
-public class DisconnectPacket implements Packet {
-    
-    @Override
-    public void send(Connection connection) throws IOException {
-    }
-
-    @Override
-    public void receive(Connection connection) throws IOException {
-    }
-
-    @Override
-    public int getId() {
-        return -4;
-    }
+public class NetoFramework {
+    /**
+     * The location within the jar of the pom.properties file used to load version information.
+     */
+    public static final String PROPERTIES_LOCATION = 
+            "/META-INF/maven/com.neto-framework/Neto-Framework/pom.properties";
 }

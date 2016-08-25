@@ -43,10 +43,9 @@ import javax.crypto.spec.IvParameterSpec;
 public final class Connection {
     
     /**
-     * A magic string that should be within a handshake packet to verify the
-     * connection is also using the Neto-Framework.
+     * The magic string that is sent to ensure the same framework is being used.
      */
-    public static String MAGIC_STRING = "SDLJhs34jlDdj89";
+    public static final String MAGIC_STRING = "KKCZkkWjMmhecqq8HZEZXS9wrUngXtaU";
     
     /**
      * The amount of time that is allowed to complete the handshake process before getting
@@ -57,7 +56,7 @@ public final class Connection {
     /**
      * The window time allowed to prevent replay attacks.
      */
-    public static long REPLAY_WINDOW = 1000;
+    public static long REPLAY_WINDOW = 2000;
 
     /**
      * TCP Socket of connection.

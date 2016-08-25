@@ -19,27 +19,17 @@
 package net.neto_framework.client.packets.handlers;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
+import java.net.DatagramPacket;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
+import java.util.Base64;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import net.neto_framework.ClientPacketHandler;
-import net.neto_framework.Protocol;
+import net.neto_framework.Connection;
 import net.neto_framework.client.Client;
 import net.neto_framework.client.exceptions.ClientConnectException;
 import net.neto_framework.packets.EncryptionRequestPacket;
-import net.neto_framework.packets.EncryptionResponsePacket;
-import net.neto_framework.packets.HandshakePacket;
 
 /**
  * A client-side packet handler for EncryptionRequestPacket.
@@ -51,82 +41,52 @@ public class EncryptionRequestPacketHandler implements
 
     @Override
     public void onReceivePacket(Client client, EncryptionRequestPacket packet) {
-        if(packet.getValue().equals(HandshakePacket.MAGIC_STRING)) {
-            try {
-                PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(
-                        new X509EncodedKeySpec(packet.getPublicKey()));
-                client.setPublicKey(publicKey);
-
-                KeyGenerator keyGenerator = KeyGenerator.getInstance("DESede");
-                SecretKey secretKey = keyGenerator.generateKey();
-                client.setSecretKey(secretKey);
-            } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-                ClientConnectException exception = new ClientConnectException("Received invalid"
-                        + " public key from server.", e);
-                client.setHandshakeException(exception);
-                client.disconnect(false);
-                return;
-            }
-
-            EncryptionResponsePacket encryptionResponsePacket = new EncryptionResponsePacket();
-            byte[] encryptedSecretKey;
-
-            try {
-                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                cipher.init(Cipher.ENCRYPT_MODE, client.getPublicKey());
-                encryptedSecretKey = cipher.doFinal(client.getSecretKey().getEncoded());
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException |
-                    InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-                ClientConnectException exception = new ClientConnectException("Failed to use "
-                        + "public key form server.", e);
-                client.setHandshakeException(exception);
-                client.disconnect(false);
-                
-                return;
-            }
-
-            encryptionResponsePacket.setSecretKey(encryptedSecretKey);
-
-            SecureRandom random = new SecureRandom();
-            byte iv[] = new byte[8];
-            random.nextBytes(iv);
-            IvParameterSpec ivParameter = new IvParameterSpec(iv);
-            client.setIvParameterSpec(ivParameter);
-
-            byte[] encryptedIv;
-
-            try {
-                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                cipher.init(Cipher.ENCRYPT_MODE, client.getPublicKey());
-                encryptedIv = cipher.doFinal(iv);
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException |
-                    InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-                ClientConnectException exception = new ClientConnectException("Failed to use"
-                        + " public key form server.", e);
-                client.setHandshakeException(exception);
-                client.disconnect(false);
-                return;
-            }
-
-            encryptionResponsePacket.setIv(encryptedIv);
-            encryptionResponsePacket.setRandom(client.getRandom());
-
-            try {
-                client.getServerConnection().sendPacket(encryptionResponsePacket,
-                        Protocol.TCP);
-                client.getServerConnection().enableEncryption();
-            } catch (IOException e) {
-                ClientConnectException exception = new ClientConnectException("Failed to send"
-                        + " encryption response.", e);
-                client.setHandshakeException(exception);
-                client.disconnect(false);
-            }
-        } else {
-            ClientConnectException exception = new ClientConnectException("Incorrect magic "
-                    + "string received.");
+        
+        // Check to make sure the server sent a valid magic string.
+        if(!packet.getMagicStringValue().equals(Connection.MAGIC_STRING)) {
+            ClientConnectException exception = new ClientConnectException("Server did not follow"
+                    + " protocol, server is most likely not using Neto-Framework.");
+            client.setHandshakeException(exception);
+            client.disconnect(false);
+            return;
+        }
+        
+        // Store secret key.
+        SecretKeySpec secretKeySpec = new SecretKeySpec(packet.getSecretKey(), 0,
+                packet.getSecretKey().length, "DESede");
+        client.setSecretKey(secretKeySpec);
+        
+        // Store IV Parameter.
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(packet.getIv());
+        client.setIvParameterSpec(ivParameterSpec);
+        
+        // Define byte array to store hash.
+        byte[] hash = null;
+        
+        // Create hash from given random.
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
+            hash = messageDigest.digest(packet.getRandom());
+            hash = Base64.getEncoder().withoutPadding().encode(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to create hash from given random.", e);
+        }
+        
+        // Craft raw packet containing only the hash.
+        DatagramPacket hashPacket = new DatagramPacket(
+                hash,
+                hash.length,
+                client.getAddress().getInetAddress(),
+                client.getAddress().getPort());
+        
+        // Attempt to send raw hash packet.
+        try {
+            client.getUdpSocket().send(hashPacket);
+        } catch (IOException e) {
+            ClientConnectException exception = new ClientConnectException("Failed to send raw hash"
+                    + " to server over UDP.", e);
             client.setHandshakeException(exception);
             client.disconnect(false);
         }
     }
-    
 }

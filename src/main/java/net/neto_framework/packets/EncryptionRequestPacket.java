@@ -23,57 +23,99 @@ import net.neto_framework.Connection;
 import net.neto_framework.Packet;
 
 /**
- * The encryption request packet is sent from server to client after the server has received a
- * handshake. This packet contains the servers public key that should be used to encrypt the shared
- * secret when sending the encryption response.
+ * The encryption request packet is sent from server to client. It contains the secret key and IV
+ * parameter that will be used to encrypt UDP communication. This packet must be sent over an
+ * encrypted TCP connection such as SSLSocket.
  *
- * @author Jesse Prescott (BleedObsidian)
+ * @author BleedObsidian (Jesse Prescott)
  */
 public class EncryptionRequestPacket implements Packet {
     
     /**
-     * The actual magic string value that was received.
+     * The magic string that is sent to ensure the same framework is being used.
      */
-    private String value;
+    private String magicStringValue;
     
     /**
-     * The public key to be used by client to encrypt shared secret.
+     * The secret key.
      */
-    private byte[] publicKey;
+    private byte[] secretKey;
+    
+    /**
+     * The IV parameter used for ciphering.
+     */
+    private byte[] iv;
+    
+    /**
+     * A random sequence of bytes that must be returned in encrypted form over UDP by the client.
+     */
+    private byte[] random;
 
     @Override
     public void send(Connection connection) throws IOException {
-        connection.sendString(HandshakePacket.MAGIC_STRING);
-        connection.sendInteger(this.publicKey.length);
-        connection.send(this.publicKey);
+        connection.sendString(Connection.MAGIC_STRING);
+        connection.sendByteArray(this.secretKey);
+        connection.sendByteArray(this.iv);
+        connection.sendByteArray(this.random);
     }
-    
+
     @Override
     public void receive(Connection connection) throws IOException {
-        this.value = connection.receiveString();
-        int keyLength = connection.receiveInteger();
-        this.publicKey = connection.receive(new byte[keyLength]);
+        this.magicStringValue = connection.receiveString();
+        this.secretKey = connection.receiveByteArray();
+        this.iv = connection.receiveByteArray();
+        this.random = connection.receiveByteArray();
     }
     
     /**
-     * @return The actual magic string value that was received.
+     * @return The magic string that is sent to ensure the same framework is being used.
      */
-    public String getValue() {
-        return this.value;
+    public String getMagicStringValue() {
+        return this.magicStringValue;
     }
     
     /**
-     * @return The public key to be used by client to encrypt shared secret.
+     * @return The secret key.
      */
-    public byte[] getPublicKey() {
-        return this.publicKey;
+    public byte[] getSecretKey() {
+        return this.secretKey;
     }
     
     /**
-     * @param publicKey The public key to be used by client to encrypt shared secret.
+     * @param secretKey The secret key.
      */
-    public void setPublicKey(byte[] publicKey) {
-        this.publicKey = publicKey;
+    public void setSecretKey(byte[] secretKey) {
+        this.secretKey = secretKey;
+    }
+    
+    /**
+     * @return The IV parameter used for ciphering.
+     */
+    public byte[] getIv() {
+        return this.iv;
+    }
+    
+    /**
+     * @param iv The IV parameter used for ciphering.
+     */
+    public void setIv(byte[] iv) {
+        this.iv = iv;
+    }
+    
+    /**
+     * @return A random sequence of bytes that must be returned in encrypted form over UDP by the
+     *         client.
+     */
+    public byte[] getRandom() {
+        return this.random;
+    }
+    
+    /**
+     * @param random A random sequence of bytes that must be returned in encrypted form over UDP by
+     *               the client.
+     */
+    public void setRandom(byte[] random) {
+        this.random = random;
     }
 
     @Override
